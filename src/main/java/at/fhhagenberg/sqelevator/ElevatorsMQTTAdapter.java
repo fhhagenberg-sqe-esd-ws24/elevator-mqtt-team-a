@@ -9,7 +9,7 @@ import java.lang.Thread;
  */
 public class ElevatorsMQTTAdapter {
   private IElevator controller;
-  private Vector<ElevatorDataModell> elevators;
+  private Building building;
 
   /**
    * CTOR
@@ -36,23 +36,12 @@ public class ElevatorsMQTTAdapter {
   }
 
   /**
-   * Runner, which polls from PLC and updates data over MQTT
+   * Runner
    */
   private void run() {
     // Loop Forever
     while (true) {
-      for (int elevnr = 0; elevnr < this.elevators.size(); elevnr++) {
-        System.out.println("Polling Elevator Nr. " + elevnr);
-        // Poll Elevator Data from PLC
-        var tmp = this.pollElevator(elevnr);
-        if (tmp != this.elevators.get(elevnr)) {
-          System.out.println("Elevator Nr. " + elevnr + " changed");
-          // store updated data
-          this.elevators.set(elevnr, tmp);
-          // Publish over MQTT if there is a difference in data
-          this.publishMQTT(elevnr);
-        }
-      }
+      this.updateState();
       try {
         Thread.sleep(100);
       } catch (InterruptedException e) {
@@ -61,7 +50,28 @@ public class ElevatorsMQTTAdapter {
   }
 
   /**
-   * Publish updates over MQTT
+   * Updates the State of the Elevators (polls from PLC) and updates data over
+   * MQTT
+   * if there is a difference
+   */
+  private void updateState() {
+    for (int elevnr = 0; elevnr < this.elevators.size(); elevnr++) {
+      System.out.println("Polling Elevator Nr. " + elevnr);
+      // Poll Elevator Data from PLC
+      var tmp = this.pollElevator(elevnr);
+      if (!tmp.equals(this.elevators.get(elevnr))) {
+        System.out.println("Elevator Nr. " + elevnr + " changed");
+        // store updated data
+        this.elevators.set(elevnr, tmp);
+        // Publish over MQTT if there is a difference in data
+        this.publishMQTT(elevnr);
+      }
+    }
+  }
+
+  /**
+   * Publish updates over MQTT for a specific Elevator, if there
+   * are changes
    * 
    * @param elevnr Elevator to update
    * @return 0 on success, otherwise error
