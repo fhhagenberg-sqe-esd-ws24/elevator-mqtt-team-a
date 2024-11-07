@@ -2,8 +2,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.List;
-import java.util.ArrayList;
 import at.fhhagenberg.sqelevator.ElevatorDataModell;
 
 class ElevatorDataModellTest {
@@ -58,30 +56,22 @@ class ElevatorDataModellTest {
   }
 
   @Test
-  void testSetAndGetFloorsRequested() {
-    elevatorDataModel.setFloorRequested(2);
-    assertEquals(2, elevatorDataModel.getFloorsRequested().get(2));
-  }
-
-  @Test
   void testSetFloorRequestedInvalid() {
     assertThrows(IllegalArgumentException.class, () -> {
-      elevatorDataModel.setFloorRequested(-1);
+      elevatorDataModel.setFloorRequested(-1, true);
     });
 
     assertThrows(IllegalArgumentException.class, () -> {
-      elevatorDataModel.setFloorRequested(15);
+      elevatorDataModel.setFloorRequested(15, true);
     });
   }
 
   @Test
-  void testSetAndGetFloorsToService() {
-    List<Integer> floorsToService = new ArrayList<>();
-    floorsToService.add(0);
-    floorsToService.add(1);
-    elevatorDataModel.setFloorsToService(floorsToService);
+  void testSetAndGetFloorToService() {
+    elevatorDataModel.setFloorToService(3, true);
+    elevatorDataModel.setFloorToService(3, false);
 
-    assertEquals(floorsToService, elevatorDataModel.getFloorsToService());
+    assertFalse(elevatorDataModel.getFloorToService(3));
   }
 
   @Test
