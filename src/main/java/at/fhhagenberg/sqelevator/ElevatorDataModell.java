@@ -14,8 +14,8 @@ public class ElevatorDataModell {
   private int currentFloor = 0; // Current floor level
   private int acceleration = 0; // Elevator acceleration
   private int speed = 0; // Current speed of the elevator
-  private List<Integer> floorsRequested; // List of floors requested by passengers
-  private List<Integer> floorsToService; // List of floors the elevator will service
+  private List<Boolean> floorsRequested; // List of floors requested by passengers
+  private List<Boolean> floorsToService; // List of floors the elevator will service
   private int currentHeight = 0; // Position in feet from ground level
   private int currentPassengersWeight = 0; // Current weight of passengers in elevator
   private int maxPassengers = 0; // Maximum allowed passengers
@@ -134,8 +134,8 @@ public class ElevatorDataModell {
   /**
    * Gets the list of floors requested by passengers.
    */
-  public List<Integer> getFloorsRequested() {
-    return floorsRequested;
+  public Boolean getFloorRequested(int floorToService) {
+    return floorsRequested.get(floorToService);
   }
 
   /**
@@ -143,12 +143,9 @@ public class ElevatorDataModell {
    * 
    * @param floorRequested Floor requested
    */
-  public void setFloorRequested(int floorRequested) {
+  public void setFloorRequested(int floorToService, boolean isRequested) {
     // Access by Index
-    if (floorRequested < 0 || floorRequested >= floorsRequested.size()) {
-      throw new IllegalArgumentException("Invalid Floor Number");
-    }
-    floorsRequested.set(floorRequested, floorRequested);
+    this.floorsRequested.set(floorToService,isRequested);
   }
 
   /**
@@ -156,8 +153,8 @@ public class ElevatorDataModell {
    * 
    * @param floorsRequested List of floors requested
    */
-  public List<Integer> getFloorsToService() {
-    return floorsToService;
+  public Boolean getFloorToService(int floorToService) {
+    return floorsToService.get(floorToService);
   }
 
   /**
@@ -165,8 +162,8 @@ public class ElevatorDataModell {
    * 
    * @param floorsToService Floor to service
    */
-  public void setFloorsToService(List<Integer> floorsToService) {
-    this.floorsToService = floorsToService;
+  public void setFloorToService(int floorToService, boolean doService) {
+    this.floorsToService.set(floorToService,doService);
   }
 
   /**
