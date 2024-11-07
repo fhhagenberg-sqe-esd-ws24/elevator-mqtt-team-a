@@ -176,7 +176,7 @@ public class Building {
    * @param isRequested     Request the floor or not
    * @throws IllegalArgumentException if the Elevator Number is invalid
    */
-  public void updateElevatorFloorsRequested(int elevatorNr, int floorRequested, boolean isRequested) {
+  public void updateElevatorFloorRequested(int elevatorNr, int floorRequested, boolean isRequested) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
       throw new IllegalArgumentException("Invalid Elevator Number");
     }
@@ -191,7 +191,7 @@ public class Building {
    * @param doService       Service the floor or not
    * @throws IllegalArgumentException if the Elevator Number is invalid
    */
-  public void updateElevatorFloorsToService(int elevatorNr, int floorToService, boolean doService) {
+  public void updateElevatorFloorToService(int elevatorNr, int floorToService, boolean doService) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
       throw new IllegalArgumentException("Invalid Elevator Number");
     }

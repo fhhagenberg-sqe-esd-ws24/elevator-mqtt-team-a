@@ -138,8 +138,12 @@ public class ElevatorDataModell {
   }
 
   /**
-   * Gets the list of floors requested by passengers.
-   */
+  * Gets if a floor is requested for the elevator
+  * 
+  * @param floorToService Floor to service
+  *
+  * @return if the floor is requested or not
+  */
   public Boolean getFloorRequested(int floorToService) {
     return floorsRequested.get(floorToService);
   }
@@ -147,7 +151,8 @@ public class ElevatorDataModell {
   /**
    * Set a requested floor
    * 
-   * @param floorRequested Floor requested
+   * @param floorToService Floor to service
+   * @param isRequested    Request the floor or not
    */
   public void setFloorRequested(int floorToService, boolean isRequested) {
     // Access by Index
@@ -155,18 +160,21 @@ public class ElevatorDataModell {
   }
 
   /**
-   * Sets the list of floors requested by passengers.
+   * Gets if a floor will be serviced by the elevator
    * 
-   * @param floorsRequested List of floors requested
+   * @param floorToService Floor to service
+   * 
+   * @return if the floor will be serviced or not
    */
   public Boolean getFloorToService(int floorToService) {
     return floorsToService.get(floorToService);
   }
 
   /**
-   * Set all floors to service
+   * Set a floor to service
    * 
-   * @param floorsToService Floor to service
+   * @param floorToService Floor to service
+   * @param doService      Service the floor or not
    */
   public void setFloorToService(int floorToService, boolean doService) {
     this.floorsToService.set(floorToService,doService);
@@ -174,6 +182,8 @@ public class ElevatorDataModell {
 
   /**
    * Gets the current height of the elevator.
+   * 
+   * @return Current height
    */
   public int getCurrentHeight() {
     return currentHeight;
@@ -206,15 +216,17 @@ public class ElevatorDataModell {
 
   /**
    * Gets the maximum allowed passengers.
+   * 
+   * @return Maximum allowed passengers
    */
   public int getMaxPassengers() {
     return maxPassengers;
   }
 
   /**
-   * Sets the maximum allowed passengers.
+   * Gets the elevator number.
    * 
-   * @param maxPassengers Maximum allowed passengers
+   * @return Elevator number
    */
   public int getElevatorNumber() {
     return this.elevatorNumber;
