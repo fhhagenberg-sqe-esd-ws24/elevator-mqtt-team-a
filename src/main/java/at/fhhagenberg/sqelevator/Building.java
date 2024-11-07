@@ -9,18 +9,12 @@ import java.util.ArrayList;
  */
 public class Building {
 
-  /** State variable for a button of a floor when it is pressed up */
-  public final static int BUTTON_PRESSED_DIRECTION_UP = 0;
-  /** State variable for a button of a floor when it is pressed down */
-  public final static int BUTTON_PRESSED_DIRECTION_DOWN = 1;
-  /** State variable for a button of a floor when it is not pressed */
-  public final static int BUTTON_NOT_PRESSED = 2;
-
   /** Hold information of Elevators in the Building */
   private final List<ElevatorDataModell> elevators;
 
   /** Hold information of Button state for each floor */
-  private final List<Integer> buttonsPressed;
+  private final List<Boolean> floorUpButtonsPressed;
+  private final List<Boolean> floorDownButtonsPressed;
 
   /** Stores number of floors in the building */
   private final int nrFloors;
@@ -35,7 +29,8 @@ public class Building {
   public Building(int nrElevators, int nrFloors, int maxPassengers) {
     this.nrFloors = nrFloors;
     this.elevators = new ArrayList<>(nrElevators);
-    this.buttonsPressed = new ArrayList<>(nrFloors);
+    this.floorUpButtonsPressed = new ArrayList<>(nrFloors);
+    this.floorDownButtonsPressed = new ArrayList<>(nrFloors);
     for (int i = 0; i < nrElevators; i++) {
       elevators.add(new ElevatorDataModell(i, nrFloors, maxPassengers));
     }
@@ -230,30 +225,58 @@ public class Building {
   }
 
   /**
-   * Updates the button state of a specific floor
+   * Updates the up button state of a specific floor
    * 
    * @param floorNr Floor number
    * @param state   Button state of the floor
    * @throws IllegalArgumentException if the Floor Number is invalid
    */
-  public void updateButtonState(int floorNr, int state) {
-    if (floorNr < 0 || floorNr >= buttonsPressed.size()) {
+  public void updateUpButtonState(int floorNr, boolean state) {
+    if (floorNr < 0 || floorNr >= floorUpButtonsPressed.size()) {
       throw new IllegalArgumentException("Invalid Floor Number");
     }
-    buttonsPressed.set(floorNr, state);
+    floorUpButtonsPressed.set(floorNr, state);
   }
 
   /**
-   * Gets the button state of a specific floor
+   * Gets the up button state of a specific floor
    * 
    * @param floorNr Floor number
    * @return Button state of the floor
    * @throws IllegalArgumentException if the Floor Number is invalid
    */
-  public int getButtonState(int floorNr) {
-    if (floorNr < 0 || floorNr >= buttonsPressed.size()) {
+  public boolean getUpButtonState(int floorNr) {
+    if (floorNr < 0 || floorNr >= floorUpButtonsPressed.size()) {
       throw new IllegalArgumentException("Invalid Floor Number");
     }
-    return buttonsPressed.get(floorNr);
+    return floorUpButtonsPressed.get(floorNr);
+  }
+
+  /**
+   * Updates the down button state of a specific floor
+   * 
+   * @param floorNr Floor number
+   * @param state   Button state of the floor
+   * @throws IllegalArgumentException if the Floor Number is invalid
+   */
+  public void updateDownButtonState(int floorNr, boolean state) {
+    if (floorNr < 0 || floorNr >= floorDownButtonsPressed.size()) {
+      throw new IllegalArgumentException("Invalid Floor Number");
+    }
+    floorDownButtonsPressed.set(floorNr, state);
+  }
+
+  /**
+   * Gets the down button state of a specific floor
+   * 
+   * @param floorNr Floor number
+   * @return Button state of the floor
+   * @throws IllegalArgumentException if the Floor Number is invalid
+   */
+  public boolean getDownButtonState(int floorNr) {
+    if (floorNr < 0 || floorNr >= floorDownButtonsPressed.size()) {
+      throw new IllegalArgumentException("Invalid Floor Number");
+    }
+    return floorDownButtonsPressed.get(floorNr);
   }
 }

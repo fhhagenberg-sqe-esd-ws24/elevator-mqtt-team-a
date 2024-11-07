@@ -5,14 +5,6 @@ import java.rmi.RemoteException;
 import java.lang.Thread;
 import java.util.function.BiConsumer;
 
-// To be deleted when we have a real mqtt class
-public class DummyMQTT {
-  public void Publish(String Topic) {
-    // do nothing
-    return;
-  }
-}
-
 /**
  * ElevatorsMQTTAdapter which takes data from the PLC and publishes it over MQTT
  */
@@ -27,6 +19,7 @@ public class ElevatorsMQTTAdapter {
   public ElevatorsMQTTAdapter(IElevator controller) {
     this.controller = controller;
     try{ this.building = new Building(controller.getElevatorNum(), controller.getFloorNum(), controller.getElevatorCapacity(0));
+      
     } catch (Exception e) {
       System.out.println("Java RMI request failed!");
     }
@@ -64,16 +57,50 @@ public class ElevatorsMQTTAdapter {
   }
 
   /**
+   * Polls the Floors to service from the PLC and updates the Building
+   * @param elevnr Elevator Number
+   * @throws RemoteException
+   */
+  public void pollAndExecuteForFloorButtons() throws RemoteException{ 
+    for(int floornr = 0; floornr < this.building.getNrFloors(); floornr++)
+    {
+      //must call in extra function as there are no TriConsumer in Java ( ._.)
+      boolean floorUpButton = this.controller.getFloorButtonUp(floornr);
+      if (this.building.getUpButtonState(floornr) != floorUpButton) {
+        this.building.updateUpButtonState(floornr, floorUpButton);
+        // Publish over MQTT
+        publishMQTT("floors/" + floornr + "/ButtonUpPressed/", floorUpButton);
+      }
+
+      boolean floorDownButton = this.controller.getFloorButtonDown(floornr);
+      if (this.building.getDownButtonState(floornr) != floorUpButton) {
+        this.building.updateDownButtonState(floornr, floorUpButton);
+        // Publish over MQTT
+        publishMQTT("floors/" + floornr + "/ButtonDownPressed/", floorDownButton);
+      }
+    }
+  }
+
+  /**
    * Updates the State of the Elevators (polls from PLC) and updates data over
    * MQTT
    * if there is a difference
    */
   public void updateState() {
+
+    // update everything that is specific to an elevator
     for (int elevnr = 0; elevnr < this.building.getNrElevators(); elevnr++) {
 
       System.out.println("Polling Elevator Nr. " + elevnr);      
       pollAndUpdateElevator(elevnr);
 
+    }
+
+    // update everything that is specific to a floor
+    try {
+      pollAndExecuteForFloorButtons();
+    } catch (Exception e) {
+      System.out.println("Java RMI request failed!");
     }
   }
 
@@ -86,13 +113,12 @@ public class ElevatorsMQTTAdapter {
    * @param elevnr    Elevator Number
    * @param <T>       Type of the value
    */
-  public <T> void pollAndExecute (T param1, T param2 , BiConsumer<Integer,T> function,int elevnr, String MqttTopicForPublish) throws RemoteException
+  private <T> void pollAndExecute (T param1, T param2 , BiConsumer<Integer,T> function,int elevnr, String MqttTopicForPublish) throws RemoteException
   {
     if (param1 != param2) {
       function.accept(elevnr, param2);
       // Publish over MQTT
-      this.publishMQTT(elevnr, MqttTopicForPublish, param2);
-      
+      this.publishMQTT("elevators/" + elevnr + "/" + MqttTopicForPublish, param2);
     }
 
   }
@@ -102,7 +128,7 @@ public class ElevatorsMQTTAdapter {
    * @param elevnr Elevator Number
    * @throws RemoteException
    */
-  public void pollAndExecuteFloorsRequested(int elevnr) throws RemoteException{ 
+  private void pollAndExecuteFloorsRequested(int elevnr) throws RemoteException{ 
     for(int floornr = 0; floornr < this.building.getNrFloors(); floornr++)
       {
         //must call in extra function as there are no TriConsumer in Java ( ._.)
@@ -110,25 +136,25 @@ public class ElevatorsMQTTAdapter {
         if (this.building.getElevator(elevnr).getFloorToService(floornr) != remoteFloorRequested) {
           this.building.updateElevatorFloorRequested(elevnr,floornr, remoteFloorRequested);
           // Publish over MQTT
-          publishMQTT(elevnr, "FloorRequested/"+floornr, remoteFloorRequested);
+          publishMQTT("elevators/" + elevnr + "/FloorRequested/"+floornr, remoteFloorRequested);
         }
       }
   }
 
   /**
-   * Polls the Floors to service from the PLC and updates the Building
+   * Polls the Floors serviced from the PLC and updates the Building
    * @param elevnr Elevator Number
    * @throws RemoteException
    */
-  public void pollAndExecuteFloorsToService(int elevnr) throws RemoteException{ 
+  private void pollAndExecuteFloorsServiced(int elevnr) throws RemoteException{ 
     for(int floornr = 0; floornr < this.building.getNrFloors(); floornr++)
       {
         //must call in extra function as there are no TriConsumer in Java ( ._.)
-        boolean remoteFloorToService = this.controller.getServicesFloors(elevnr,floornr);
-        if (this.building.getElevator(elevnr).getFloorToService(floornr) != remoteFloorToService) {
-          this.building.updateElevatorFloorToService(elevnr,floornr, remoteFloorToService);
+        boolean remoteFloorServiced = this.controller.getServicesFloors(elevnr,floornr);
+        if (this.building.getElevator(elevnr).getFloorToService(floornr) != remoteFloorServiced) {
+          this.building.updateElevatorFloorRequested(elevnr,floornr, remoteFloorServiced);
           // Publish over MQTT
-          publishMQTT(elevnr, "FloorToService/"+floornr, remoteFloorToService);
+          publishMQTT("elevators/" + elevnr + "/FloorServiced/" + floornr, remoteFloorServiced);
         }
       }
   }
@@ -136,7 +162,7 @@ public class ElevatorsMQTTAdapter {
   /**
    * Polls an Elevator from the PLC and updates the Building
    */
-  public void pollAndUpdateElevator(int elevnr) {
+  private void pollAndUpdateElevator(int elevnr) {
 
     try{
 
@@ -146,9 +172,9 @@ public class ElevatorsMQTTAdapter {
       pollAndExecute(this.building.getElevator(elevnr).getCurrentFloor(), this.controller.getElevatorFloor(elevnr) , this.building::updateElevatorCurrentFloor, elevnr, "ElevatorCurrentFloor");
       pollAndExecute(this.building.getElevator(elevnr).getAcceleration(), this.controller.getElevatorAccel(elevnr) , this.building::updateElevatorAcceleration, elevnr, "ElevatorAcceleration");
       pollAndExecute(this.building.getElevator(elevnr).getSpeed(), this.controller.getElevatorSpeed(elevnr) , this.building::updateElevatorSpeed, elevnr, "ElevatorSpeed");
-      
+
       pollAndExecuteFloorsRequested(elevnr);
-      pollAndExecuteFloorsToService(elevnr);
+      pollAndExecuteFloorsServiced(elevnr);
 
       pollAndExecute(this.building.getElevator(elevnr).getCurrentHeight(), this.controller.getElevatorPosition(elevnr) , this.building::updateElevatorCurrentHeight, elevnr, "ElevatorCurrentHeight");
         
@@ -165,18 +191,17 @@ public class ElevatorsMQTTAdapter {
    * Publish updates over MQTT for a specific Elevator, if there
    * are changes
    * 
-   * @param elevnr Elevator to update
+   * @param topic contains the topic string 
+   * @param T data for the topic
    * @return 0 on success, otherwise error
    */
-  public <T> int publishMQTT(int elevnr, String topic, T data) {
-    String fullTopic = "elevators/" + elevnr + "/" + topic;
+  private <T> int publishMQTT(String topic, T data) {
 
-    System.out.println("Publishing \"" + fullTopic + ": " + data + "\"");
+    System.out.println("Publishing \"" + topic + ": " + data + "\"");
 
-    dummyMQTT.Publish(fullTopic);
+    dummyMQTT.Publish(topic);
     
     //return mqttClient.publish(fullTopic, data.toString());
     return 0;
-    
   }
 }
