@@ -31,6 +31,12 @@ public class ElevatorDataModell {
     this.floorsRequested = new ArrayList<>(nrFloors);
     this.floorsToService = new ArrayList<>(nrFloors);
     this.maxPassengers = maxPassengers;
+
+    // Populate the lists with default values (e.g., null or 0)
+    for (int i = 0; i < nrFloors; i++) {
+      this.floorsRequested.add(null); // or 0 if you prefer an integer placeholder
+      this.floorsToService.add(null); // or 0 if needed
+    }
   }
 
   /**
