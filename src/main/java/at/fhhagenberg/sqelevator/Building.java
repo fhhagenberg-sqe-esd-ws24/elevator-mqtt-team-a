@@ -8,7 +8,20 @@ import java.util.ArrayList;
  * Elevators
  */
 public class Building {
+
+  
+  /** State variable for a button of a floor when it is pressed up */
+	public final static int BUTTON_PRESSED_DIRECTION_UP = 0;			
+  /** State variable for a button of a floor when it is pressed down */
+	public final static int BUTTON_PRESSED_DIRECTION_DOWN = 1;			
+  /** State variable for a button of a floor when it is not pressed */
+	public final static int BUTTON_NOT_PRESSED = 2;		
+
+  /** Hold information of Elevators in the Building */
   private final List<ElevatorDataModell> elevators;
+
+  /** Hold information of Button state for each floor */
+  private final List<Integer> buttonsPressed;
 
   /**
    * Creates a new Building Instance
@@ -19,6 +32,7 @@ public class Building {
    */
   public Building(int nrElevators, int nrFloors, int maxPassengers) {
     this.elevators = new ArrayList<>(nrElevators);
+    this.buttonsPressed = new ArrayList<>(nrFloors);
     for (int i = 0; i < nrElevators; i++) {
       elevators.add(new ElevatorDataModell(i, nrFloors, maxPassengers));
     }
@@ -158,28 +172,30 @@ public class Building {
    * Updates the floors requested of a specific Elevator
    * 
    * @param elevatorNr      Elevator number
-   * @param floorsRequested Floors requested by the Elevator
+   * @param floorRequested  Floor requested by the Elevator
+   * @param isRequested     Request the floor or not
    * @throws IllegalArgumentException if the Elevator Number is invalid
    */
-  public void updateElevatorFloorsRequested(int elevatorNr, List<Integer> floorsRequested) {
+  public void updateElevatorFloorsRequested(int elevatorNr, int floorRequested, boolean isRequested) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
       throw new IllegalArgumentException("Invalid Elevator Number");
     }
-    elevators.get(elevatorNr).setFloorsRequested(floorsRequested);
+    elevators.get(elevatorNr).setFloorRequested(floorRequested,isRequested);
   }
 
   /**
    * Updates the floors to service of a specific Elevator
    * 
    * @param elevatorNr      Elevator number
-   * @param floorsToService Floors to service by the Elevator
+   * @param floorToService  Floor to service by the Elevator
+   * @param doService       Service the floor or not
    * @throws IllegalArgumentException if the Elevator Number is invalid
    */
-  public void updateElevatorFloorsToService(int elevatorNr, List<Integer> floorsToService) {
+  public void updateElevatorFloorsToService(int elevatorNr, int floorToService, boolean doService) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
       throw new IllegalArgumentException("Invalid Elevator Number");
     }
-    elevators.get(elevatorNr).setFloorsToService(floorsToService);
+    elevators.get(elevatorNr).setFloorToService(floorToService,doService);
   }
 
   /**
@@ -211,9 +227,30 @@ public class Building {
   }
 
   /**
-   * Gets the Elevator at a specific index
+   * Updates the button state of a specific floor
    * 
-   * @param index Index of the elevator
-   * @return Elevator at the index
+   * @param floorNr Floor number
+   * @param state   Button state of the floor
+   * @throws IllegalArgumentException if the Floor Number is invalid
    */
+  public void updateButtonState(int floorNr, int state) {
+    if (floorNr < 0 || floorNr >= buttonsPressed.size()) {
+      throw new IllegalArgumentException("Invalid Floor Number");
+    }
+    buttonsPressed.set(floorNr, state);
+  }
+
+  /**
+   * Gets the button state of a specific floor
+   * 
+   * @param floorNr Floor number
+   * @return Button state of the floor
+   * @throws IllegalArgumentException if the Floor Number is invalid
+   */
+  public int getButtonState(int floorNr) {
+    if (floorNr < 0 || floorNr >= buttonsPressed.size()) {
+      throw new IllegalArgumentException("Invalid Floor Number");
+    }
+    return buttonsPressed.get(floorNr);
+    
 }
