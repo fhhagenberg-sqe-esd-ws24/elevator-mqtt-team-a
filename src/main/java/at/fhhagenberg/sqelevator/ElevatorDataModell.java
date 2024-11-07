@@ -138,46 +138,56 @@ public class ElevatorDataModell {
   }
 
   /**
-  * Gets if a floor is requested for the elevator
-  * 
-  * @param floorToService Floor to service
-  *
-  * @return if the floor is requested or not
-  */
-  public Boolean getFloorRequested(int floorToService) {
-    return floorsRequested.get(floorToService);
+   * Gets if a floor is requested for the elevator
+   *
+   * @param floorRequested Floor to service
+   * @return if the floor is requested or not
+   */
+  public Boolean getFloorRequested(int floorRequested) {
+    if (floorRequested < 0 || floorRequested >= this.floorsRequested.size()) {
+      throw new IllegalArgumentException("Invalid Elevator Number");
+    }
+
+    return floorsRequested.get(floorRequested);
   }
 
   /**
    * Set a requested floor
-   * 
-   * @param floorToService Floor to service
+   *
+   * @param floorRequested Floor to service
    * @param isRequested    Request the floor or not
    */
-  public void setFloorRequested(int floorToService, boolean isRequested) {
-    // Access by Index
-    this.floorsRequested.set(floorToService,isRequested);
+  public void setFloorRequested(int floorRequested, boolean isRequested) {
+    if (floorRequested < 0 || floorRequested >= this.floorsRequested.size()) {
+      throw new IllegalArgumentException("Invalid Elevator Number");
+    }
+    this.floorsRequested.set(floorRequested, isRequested);
   }
 
   /**
    * Gets if a floor will be serviced by the elevator
-   * 
+   *
    * @param floorToService Floor to service
-   * 
    * @return if the floor will be serviced or not
    */
   public Boolean getFloorToService(int floorToService) {
+    if (floorToService < 0 || floorToService >= this.floorsRequested.size()) {
+      throw new IllegalArgumentException("Invalid Elevator Number");
+    }
     return floorsToService.get(floorToService);
   }
 
   /**
    * Set a floor to service
-   * 
+   *
    * @param floorToService Floor to service
    * @param doService      Service the floor or not
    */
   public void setFloorToService(int floorToService, boolean doService) {
-    this.floorsToService.set(floorToService,doService);
+    if (floorToService < 0 || floorToService >= this.floorsRequested.size()) {
+      throw new IllegalArgumentException("Invalid Elevator Number");
+    }
+    this.floorsToService.set(floorToService, doService);
   }
 
   /**
