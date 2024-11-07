@@ -4,6 +4,8 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.lang.Thread;
 import java.util.function.BiConsumer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * ElevatorsMQTTAdapter which takes data from the PLC and publishes it over MQTT
@@ -18,8 +20,14 @@ public class ElevatorsMQTTAdapter {
    */
   public ElevatorsMQTTAdapter(IElevator controller) {
     this.controller = controller;
-    try{ this.building = new Building(controller.getElevatorNum(), controller.getFloorNum(), controller.getElevatorCapacity(0));
-      
+    try{
+      int ElevatorCnt = controller.getElevatorNum();
+      List<Integer> ElevatorCapacitys = new ArrayList<>(ElevatorCnt);
+      for (int i = 0; i < ElevatorCnt; i++)
+      {
+        ElevatorCapacitys.add(controller.getElevatorCapacity(i));
+      }
+      this.building = new Building(controller.getElevatorNum(), controller.getFloorNum(), ElevatorCapacitys);
     } catch (Exception e) {
       System.out.println("Java RMI request failed!");
     }
@@ -61,7 +69,7 @@ public class ElevatorsMQTTAdapter {
    * @param elevnr Elevator Number
    * @throws RemoteException
    */
-  public void pollAndExecuteForFloorButtons() throws RemoteException{ 
+  private void pollAndExecuteForFloorButtons() throws RemoteException{ 
     for(int floornr = 0; floornr < this.building.getNrFloors(); floornr++)
     {
       //must call in extra function as there are no TriConsumer in Java ( ._.)

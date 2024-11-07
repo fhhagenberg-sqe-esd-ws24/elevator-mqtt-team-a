@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import at.fhhagenberg.sqelevator.Building;
@@ -15,7 +16,11 @@ class BuildingTest {
 
   @BeforeEach
   void setUp() {
-    building = new Building(3, 5, 10); // 3 elevators, 5 floors, max 10 passengers
+    List<Integer> maxPassengers = new ArrayList<>(3);
+    maxPassengers.add(10);
+    maxPassengers.add(10);
+    maxPassengers.add(10);
+    building = new Building(3, 5, maxPassengers); // 3 elevators, 5 floors, max 10 passengers
   }
 
   @Test

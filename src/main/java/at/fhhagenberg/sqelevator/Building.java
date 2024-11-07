@@ -26,13 +26,13 @@ public class Building {
    * @param nrFloors      Number of floors in the building
    * @param maxPassengers Maximum allowed passengers
    */
-  public Building(int nrElevators, int nrFloors, int maxPassengers) {
+  public Building(int nrElevators, int nrFloors, List<Integer> maxPassengers) {
     this.nrFloors = nrFloors;
     this.elevators = new ArrayList<>(nrElevators);
     this.floorUpButtonsPressed = new ArrayList<>(nrFloors);
     this.floorDownButtonsPressed = new ArrayList<>(nrFloors);
     for (int i = 0; i < nrElevators; i++) {
-      elevators.add(new ElevatorDataModell(i, nrFloors, maxPassengers));
+      elevators.add(new ElevatorDataModell(i, nrFloors, maxPassengers.get(i)));
     }
   }
 
