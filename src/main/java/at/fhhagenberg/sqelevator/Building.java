@@ -22,6 +22,9 @@ public class Building {
   /** Hold information of Button state for each floor */
   private final List<Integer> buttonsPressed;
 
+  /** Stores number of floors in the building */
+  private final int nrFloors;
+
   /**
    * Creates a new Building Instance
    * 
@@ -30,6 +33,7 @@ public class Building {
    * @param maxPassengers Maximum allowed passengers
    */
   public Building(int nrElevators, int nrFloors, int maxPassengers) {
+    this.nrFloors = nrFloors;
     this.elevators = new ArrayList<>(nrElevators);
     this.buttonsPressed = new ArrayList<>(nrFloors);
     for (int i = 0; i < nrElevators; i++) {
@@ -71,7 +75,7 @@ public class Building {
    * @return Number of Floors
    */
   public int getNrFloors() {
-    return elevators.get(0).getFloorsRequested().size();
+    return this.nrFloors;
   }
 
   /**
