@@ -252,5 +252,5 @@ public class Building {
       throw new IllegalArgumentException("Invalid Floor Number");
     }
     return buttonsPressed.get(floorNr);
-    
+  }
 }

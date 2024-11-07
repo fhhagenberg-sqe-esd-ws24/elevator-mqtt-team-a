@@ -5,12 +5,21 @@ import java.rmi.RemoteException;
 import java.lang.Thread;
 import java.util.function.BiConsumer;
 
+// To be deleted when we have a real mqtt class
+public class DummyMQTT {
+  public void Publish(String Topic) {
+    // do nothing
+    return;
+  }
+}
+
 /**
  * ElevatorsMQTTAdapter which takes data from the PLC and publishes it over MQTT
  */
 public class ElevatorsMQTTAdapter {
   private IElevator controller;
   private Building building;
+  private DummyMQTT dummyMQTT = new DummyMQTT();
 
   /**
    * CTOR
@@ -162,7 +171,9 @@ public class ElevatorsMQTTAdapter {
   public <T> int publishMQTT(int elevnr, String topic, T data) {
     String fullTopic = "elevators/" + elevnr + "/" + topic;
 
-    System.out.println("Publishing \"" + fullTopic + ": " + data + "\"");    
+    System.out.println("Publishing \"" + fullTopic + ": " + data + "\"");
+
+    dummyMQTT.Publish(fullTopic);
     
     //return mqttClient.publish(fullTopic, data.toString());
     return 0;
