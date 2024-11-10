@@ -2,6 +2,7 @@ package at.fhhagenberg.sqelevator;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Building Class, which represents a building and it's
@@ -28,9 +29,13 @@ public class Building {
    */
   public Building(int nrElevators, int nrFloors, List<Integer> maxPassengers) {
     this.nrFloors = nrFloors;
-    this.elevators = new ArrayList<>(nrElevators);
-    this.floorUpButtonsPressed = new ArrayList<>(nrFloors);
-    this.floorDownButtonsPressed = new ArrayList<>(nrFloors);
+    this.elevators = new ArrayList<>();
+    this.floorUpButtonsPressed = Arrays.asList(new Boolean[nrFloors]);
+    this.floorDownButtonsPressed = Arrays.asList(new Boolean[nrFloors]);
+    for (int i = 0; i < nrFloors; i++) {
+      this.floorDownButtonsPressed.set(i, false);
+      this.floorUpButtonsPressed.set(i, false);
+    }
     for (int i = 0; i < nrElevators; i++) {
       elevators.add(new ElevatorDataModell(i, nrFloors, maxPassengers.get(i)));
     }
@@ -232,8 +237,8 @@ public class Building {
    * @throws IllegalArgumentException if the Floor Number is invalid
    */
   public void updateUpButtonState(int floorNr, boolean state) {
-    if (floorNr < 0 || floorNr >= floorUpButtonsPressed.size()) {
-      throw new IllegalArgumentException("Invalid Floor Number");
+    if (floorNr < 0 || floorNr >= nrFloors) {
+      throw new IllegalArgumentException("Invalid Floor Number! Was " + floorNr);
     }
     floorUpButtonsPressed.set(floorNr, state);
   }
@@ -246,8 +251,8 @@ public class Building {
    * @throws IllegalArgumentException if the Floor Number is invalid
    */
   public boolean getUpButtonState(int floorNr) {
-    if (floorNr < 0 || floorNr >= floorUpButtonsPressed.size()) {
-      throw new IllegalArgumentException("Invalid Floor Number");
+    if (floorNr < 0 || floorNr >= nrFloors) {
+      throw new IllegalArgumentException("Invalid Floor Number Was " + floorNr);
     }
     return floorUpButtonsPressed.get(floorNr);
   }
@@ -260,8 +265,8 @@ public class Building {
    * @throws IllegalArgumentException if the Floor Number is invalid
    */
   public void updateDownButtonState(int floorNr, boolean state) {
-    if (floorNr < 0 || floorNr >= floorDownButtonsPressed.size()) {
-      throw new IllegalArgumentException("Invalid Floor Number");
+    if (floorNr < 0 || floorNr >= nrFloors) {
+      throw new IllegalArgumentException("Invalid Floor Number Was " + floorNr);
     }
     floorDownButtonsPressed.set(floorNr, state);
   }
@@ -274,8 +279,8 @@ public class Building {
    * @throws IllegalArgumentException if the Floor Number is invalid
    */
   public boolean getDownButtonState(int floorNr) {
-    if (floorNr < 0 || floorNr >= floorDownButtonsPressed.size()) {
-      throw new IllegalArgumentException("Invalid Floor Number");
+    if (floorNr < 0 || floorNr >= nrFloors) {
+      throw new IllegalArgumentException("Invalid Floor Number Was " + floorNr);
     }
     return floorDownButtonsPressed.get(floorNr);
   }

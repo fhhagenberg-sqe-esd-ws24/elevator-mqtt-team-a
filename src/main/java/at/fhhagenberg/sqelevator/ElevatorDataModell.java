@@ -1,15 +1,15 @@
 package at.fhhagenberg.sqelevator;
 
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * ElevatorDataModell represents the state and properties of an elevator.
  */
 public class ElevatorDataModell {
   private int elevatorNumber = -1; // Elevator number
-  private int direction = 0; // Elevator moving direction, 0 = idle, -1 = down, 1 = up
-  private int doorStatus = 0; // 0 = closed, 1 = open
+  private int direction = IElevator.ELEVATOR_DIRECTION_UNCOMMITTED;
+  private int doorStatus = IElevator.ELEVATOR_DOORS_CLOSED;
   private int targetFloor = 0; // Next floor to reach
   private int currentFloor = 0; // Current floor level
   private int acceleration = 0; // Elevator acceleration
@@ -28,14 +28,14 @@ public class ElevatorDataModell {
    */
   public ElevatorDataModell(int elevatorNumber, int nrFloors, int maxPassengers) {
     this.elevatorNumber = elevatorNumber;
-    this.floorsRequested = new ArrayList<>(nrFloors);
-    this.floorsToService = new ArrayList<>(nrFloors);
+    this.floorsRequested = Arrays.asList(new Boolean[nrFloors]);
+    this.floorsToService = Arrays.asList(new Boolean[nrFloors]);
     this.maxPassengers = maxPassengers;
 
     // Populate the lists with default values (e.g., null or 0)
     for (int i = 0; i < nrFloors; i++) {
-      this.floorsRequested.add(null); // or 0 if you prefer an integer placeholder
-      this.floorsToService.add(null); // or 0 if needed
+      this.floorsRequested.set(i, false); // or 0 if you prefer an integer placeholder
+      this.floorsToService.set(i, true); // or 0 if needed
     }
   }
 

@@ -18,8 +18,9 @@ public class ElevatorsMQTTAdapter {
   /**
    * CTOR
    */
-  public ElevatorsMQTTAdapter(IElevator controller) {
+  public ElevatorsMQTTAdapter(IElevator controller, DummyMQTT _dummyMQTT) {
     this.controller = controller;
+    this.dummyMQTT = _dummyMQTT;
     try{
       int ElevatorCnt = controller.getElevatorNum();
       List<Integer> ElevatorCapacitys = new ArrayList<>(ElevatorCnt);
@@ -27,9 +28,9 @@ public class ElevatorsMQTTAdapter {
       {
         ElevatorCapacitys.add(controller.getElevatorCapacity(i));
       }
-      this.building = new Building(controller.getElevatorNum(), controller.getFloorNum(), ElevatorCapacitys);
+      this.building = new Building(ElevatorCnt, controller.getFloorNum(), ElevatorCapacitys);
     } catch (Exception e) {
-      System.out.println("Java RMI request failed!");
+      System.out.println(e.toString());
     }
   }
 
@@ -41,7 +42,8 @@ public class ElevatorsMQTTAdapter {
   public static void main(String[] args) {
     try {
       IElevator controller = (IElevator) Naming.lookup("rmi://localhost/ElevatorSim");
-      ElevatorsMQTTAdapter client = new ElevatorsMQTTAdapter(controller);
+      DummyMQTT _dummyMQTT = new DummyMQTT(); 
+      ElevatorsMQTTAdapter client = new ElevatorsMQTTAdapter(controller, _dummyMQTT);
 
       client.run();
 
@@ -108,7 +110,7 @@ public class ElevatorsMQTTAdapter {
     try {
       pollAndExecuteForFloorButtons();
     } catch (Exception e) {
-      System.out.println("Java RMI request failed!");
+      System.out.println(e.toString());
     }
   }
 
@@ -141,7 +143,7 @@ public class ElevatorsMQTTAdapter {
       {
         //must call in extra function as there are no TriConsumer in Java ( ._.)
         boolean remoteFloorRequested = this.controller.getElevatorButton(elevnr,floornr);
-        if (this.building.getElevator(elevnr).getFloorToService(floornr) != remoteFloorRequested) {
+        if (this.building.getElevator(elevnr).getFloorRequested(floornr) != remoteFloorRequested) {
           this.building.updateElevatorFloorRequested(elevnr,floornr, remoteFloorRequested);
           // Publish over MQTT
           publishMQTT("elevators/" + elevnr + "/FloorRequested/"+floornr, remoteFloorRequested);
@@ -185,13 +187,11 @@ public class ElevatorsMQTTAdapter {
       pollAndExecuteFloorsServiced(elevnr);
 
       pollAndExecute(this.building.getElevator(elevnr).getCurrentHeight(), this.controller.getElevatorPosition(elevnr) , this.building::updateElevatorCurrentHeight, elevnr, "ElevatorCurrentHeight");
-        
       pollAndExecute(this.building.getElevator(elevnr).getCurrentPassengersWeight(), this.controller.getElevatorWeight(elevnr) , this.building::updateElevatorCurrentPassengersWeight, elevnr, "ElevatorCurrentPassengersWeight");
-      pollAndExecute(this.building.getElevator(elevnr).getCurrentHeight(), this.controller.getElevatorPosition(elevnr) , this.building::updateElevatorCurrentHeight, elevnr, "ElevatorCurrentHeight");
        
 
       } catch (Exception e) {
-        System.out.println("Java RMI request failed!");
+        System.out.println(e.toString());
       }
     }
   
