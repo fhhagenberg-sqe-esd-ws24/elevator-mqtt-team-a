@@ -142,6 +142,7 @@ public class ElevatorDataModell {
    *
    * @param floorRequested Floor to service
    * @return if the floor is requested or not
+   * @throws IllegalArgumentException if the floor number is invalid
    */
   public Boolean getFloorRequested(int floorRequested) {
     if (floorRequested < 0 || floorRequested >= this.floorsRequested.size()) {
@@ -156,10 +157,11 @@ public class ElevatorDataModell {
    *
    * @param floorRequested Floor to service
    * @param isRequested    Request the floor or not
+   * @throws IllegalArgumentException if the floor number is invalid
    */
   public void setFloorRequested(int floorRequested, boolean isRequested) {
     if (floorRequested < 0 || floorRequested >= this.floorsRequested.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException("Invalid Floor Number requested");
     }
     this.floorsRequested.set(floorRequested, isRequested);
   }
@@ -169,10 +171,11 @@ public class ElevatorDataModell {
    *
    * @param floorToService Floor to service
    * @return if the floor will be serviced or not
+   * @throws IllegalArgumentException if the floor number is invalid
    */
   public Boolean getFloorToService(int floorToService) {
     if (floorToService < 0 || floorToService >= this.floorsRequested.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException("Invalid Floor Number");
     }
     return floorsToService.get(floorToService);
   }
@@ -182,10 +185,11 @@ public class ElevatorDataModell {
    *
    * @param floorToService Floor to service
    * @param doService      Service the floor or not
+   * @throws IllegalArgumentException if the floor number is invalid
    */
   public void setFloorToService(int floorToService, boolean doService) {
     if (floorToService < 0 || floorToService >= this.floorsRequested.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException("Invalid Floor number");
     }
     this.floorsToService.set(floorToService, doService);
   }
