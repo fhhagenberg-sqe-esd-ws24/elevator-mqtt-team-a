@@ -57,10 +57,10 @@
         </dependency> -->
 
         <!-- Uncomment to use HiveMQ MQTT Client -->
-        <!-- <dependency>
+        <dependency>
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-mqtt-client</artifactId>
-        </dependency> -->
+        </dependency>
     </dependencies>
 
     <build>

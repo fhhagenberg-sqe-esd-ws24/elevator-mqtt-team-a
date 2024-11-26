@@ -2,10 +2,18 @@ package at.fhhagenberg.sqelevator;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.io.FileInputStream;
 import java.lang.Thread;
 import java.util.function.BiConsumer;
+
+import com.hivemq.client.mqtt.MqttClient;
+import com.hivemq.client.mqtt.MqttClientState;
+import com.hivemq.client.mqtt.datatypes.MqttQos;
+import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * ElevatorsMQTTAdapter which takes data from the PLC and publishes it over MQTT
@@ -13,22 +21,62 @@ import java.util.List;
 public class ElevatorsMQTTAdapter {
   private IElevator controller;
   private Building building;
-  private DummyMQTT dummyMQTT = new DummyMQTT();
+  // private DummyMQTT dummyMQTT = new DummyMQTT();
+  private Mqtt5AsyncClient mqttClient;
+  private int PollingIntervall;
+
+  @FunctionalInterface
+  public interface MessageHandler {
+    void handleMessage(String topic, String message);
+  }
 
   /**
    * CTOR
    */
-  public ElevatorsMQTTAdapter(IElevator controller, DummyMQTT _dummyMQTT) {
+  public ElevatorsMQTTAdapter(IElevator controller, Mqtt5AsyncClient _mqttClient, int PollingIntervall) {
     this.controller = controller;
-    this.dummyMQTT = _dummyMQTT;
-    try{
+    this.mqttClient = _mqttClient;
+    this.PollingIntervall = PollingIntervall;
+
+    // Connect to the broker
+    mqttClient.connect()
+        .thenAccept(connAck -> {
+          System.out.println("Connected successfully!");
+        })
+        .exceptionally(throwable -> {
+          System.err.println("Connection failed: " + throwable.getMessage());
+          return null;
+      });
+
+    try {
+      // fetch number of elevators and publish to subcribers
       int ElevatorCnt = controller.getElevatorNum();
+      this.publishRetainedMQTT("elevators/NrElevators", ElevatorCnt);
+
+      // fetch capacities of elevators and publish to subcribers
       List<Integer> ElevatorCapacitys = new ArrayList<>(ElevatorCnt);
       for (int i = 0; i < ElevatorCnt; i++)
       {
-        ElevatorCapacitys.add(controller.getElevatorCapacity(i));
+        int capacity = controller.getElevatorCapacity(i);
+        ElevatorCapacitys.add(capacity);
+        this.publishRetainedMQTT("elevators/" + i + "/ElevatorCapacity/", capacity);
       }
-      this.building = new Building(ElevatorCnt, controller.getFloorNum(), ElevatorCapacitys);
+
+      // fetch number of floors and publish to subcribers
+      int floorNumber = controller.getFloorNum();
+      this.building = new Building(ElevatorCnt, floorNumber, ElevatorCapacitys);
+      this.publishRetainedMQTT("elevators/NrFloors", floorNumber);
+
+      // subscribe SetTarget
+      this.building.getElevators().forEach((elevator) -> {
+        this.subcribeMQTT("elevators/" + elevator.getElevatorNumber() + "/SetTarget", (topic, message) -> {
+          try {
+            this.controller.setTarget(elevator.getElevatorNumber(), Integer.parseInt(message));
+          } catch (Exception e) {
+            System.err.println(e.toString());
+          }
+        });
+      });
     } catch (Exception e) {
       System.out.println(e.toString());
     }
@@ -41,9 +89,25 @@ public class ElevatorsMQTTAdapter {
    */
   public static void main(String[] args) {
     try {
-      IElevator controller = (IElevator) Naming.lookup("rmi://localhost/ElevatorSim");
-      DummyMQTT _dummyMQTT = new DummyMQTT(); 
-      ElevatorsMQTTAdapter client = new ElevatorsMQTTAdapter(controller, _dummyMQTT);
+
+      String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+      String appConfigPath = rootPath + "Elevators.properties";
+
+      Properties appProps = new Properties();
+      appProps.load(new FileInputStream(appConfigPath));
+
+      IElevator controller = (IElevator) Naming.lookup(appProps.getProperty("IElevatorRMI"));
+
+      // Create an MQTT client
+      Mqtt5AsyncClient mqttClient = MqttClient.builder()
+              .automaticReconnectWithDefaultConfig()
+              .useMqttVersion5()
+              .identifier(appProps.getProperty("MqttIdentifier"))
+              .serverHost(appProps.getProperty("MqttHost")) // Public HiveMQ broker
+              .serverPort((Integer)appProps.get("MqttPort")) // Default MQTT port
+              .buildAsync();
+
+      ElevatorsMQTTAdapter client = new ElevatorsMQTTAdapter(controller, mqttClient, (Integer)appProps.get("PollingIntervall"));
 
       client.run();
 
@@ -60,7 +124,7 @@ public class ElevatorsMQTTAdapter {
     while (true) {
       this.updateState();
       try {
-        Thread.sleep(100);
+        Thread.sleep(this.PollingIntervall);
       } catch (InterruptedException e) {
       }
     }
@@ -201,15 +265,77 @@ public class ElevatorsMQTTAdapter {
    * 
    * @param topic contains the topic string 
    * @param T data for the topic
-   * @return 0 on success, otherwise error
+   * @param retain determines if the message should be retained
+   * @throws IllegalStateException is thrown when not connected to broker
    */
-  private <T> int publishMQTT(String topic, T data) {
+  private <T> void publishMQTTHelper(String topic, T data, boolean retain) throws IllegalStateException {
 
     System.out.println("Publishing \"" + topic + ": " + data + "\"");
 
-    dummyMQTT.Publish(topic);
-    
-    //return mqttClient.publish(fullTopic, data.toString());
-    return 0;
+    if (this.mqttClient.getState() != MqttClientState.CONNECTED)
+    {
+      throw new IllegalStateException("Client not connected to Broker!");
+    }
+
+    this.mqttClient.publishWith()
+                .topic(topic)
+                .payload(data.toString().getBytes())
+                .qos(MqttQos.AT_LEAST_ONCE)
+                .retain(retain)
+                .send()
+                .thenAccept(pubAck -> System.out.println("Published message: " + data.toString() + " to topic: " + topic))
+                .exceptionally(throwable -> {
+                    System.err.println("Failed to publish: " + throwable.getMessage());
+                    return null;
+                });
+  }
+
+  /**
+   * Publish updates over MQTT for a specific Elevator, if there
+   * are changes
+   * 
+   * @param topic contains the topic string 
+   * @param T data for the topic
+   */
+  private <T> void publishRetainedMQTT(String topic, T data) {
+
+    this.publishMQTTHelper(topic, data, true);
+  }
+
+  /**
+   * Publish updates over MQTT for a specific Elevator, if there
+   * are changes
+   * 
+   * @param topic contains the topic string 
+   * @param T data for the topic
+   */
+  private <T> void publishMQTT(String topic, T data) {
+
+    this.publishMQTTHelper(topic, data, false);
+  }
+
+  /**
+   * 
+   */
+  private void subcribeMQTT(String topic, MessageHandler messageHandler) 
+  {
+    // Subscribe to a topic
+    mqttClient.subscribeWith()
+      .topicFilter(topic)
+      .qos(MqttQos.AT_LEAST_ONCE) // QoS level 1
+      .callback(publish -> {
+        String message = new String(publish.getPayloadAsBytes());
+        messageHandler.handleMessage(topic, message);
+      })   // Use the provided message handler
+      .send()
+      .whenComplete((subAck, throwable) -> {
+          if (throwable != null) {
+              // Handle subscription failure
+              System.err.println("Failed to subscribe: " + throwable.getMessage());
+          } else {
+              // Handle successful subscription
+              System.out.println("Subscribed successfully to topic: " + topic);
+          }
+      });
   }
 }

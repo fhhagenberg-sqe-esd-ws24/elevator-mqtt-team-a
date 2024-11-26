@@ -19,6 +19,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+
 @ExtendWith(MockitoExtension.class)
 public class ElevatorsMQTTAdapterTest {
     
@@ -27,6 +29,10 @@ public class ElevatorsMQTTAdapterTest {
 
     @Mock
     private DummyMQTT mockedDummyMQTT;
+
+    // TODO
+    // @Mock
+    // private Mqtt5AsyncClient mockedMqttClient;
 
     private static final int ElevatorCnt = 2;
     private static final int FloorCnt = 6;
