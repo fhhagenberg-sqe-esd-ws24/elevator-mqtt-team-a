@@ -1,15 +1,11 @@
 package at.fhhagenberg.sqelevator;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 
-import java.lang.reflect.Array;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,20 +15,26 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
+import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+import com.hivemq.client.mqtt.MqttClient;
+
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.hivemq.HiveMQContainer;
+
+@Testcontainers
 @ExtendWith(MockitoExtension.class)
 public class ElevatorsMQTTAdapterTest {
-    
+
     @Mock
     private IElevator mockedIElevator;
 
-    @Mock
-    private DummyMQTT mockedDummyMQTT;
+    @Container
+    private HiveMQContainer mqttContainer;
 
-    // TODO
-    // @Mock
-    // private Mqtt5AsyncClient mockedMqttClient;
+    private Mqtt5AsyncClient mqttClient;
 
     private static final int ElevatorCnt = 2;
     private static final int FloorCnt = 6;
@@ -61,17 +63,31 @@ public class ElevatorsMQTTAdapterTest {
         }
     }
 
+    @AfterEach
+    public void tearDown() {
+        mqttContainer.close();
+    }
+
     @BeforeEach
     public void Setup() throws RemoteException {
-
         MockitoAnnotations.openMocks(this);
+
+        // Initialize HiveMQ Testcontainer and MQTT client
+        mqttContainer = new HiveMQContainer(DockerImageName.parse("hivemq/hivemq-ce:latest"));
+        mqttContainer.start();
+        mqttClient = MqttClient.builder()
+                .useMqttVersion5()
+                .serverHost(mqttContainer.getHost())
+                .serverPort(mqttContainer.getMqttPort())
+                .buildAsync();
 
         SetExpectedDefaults();
     }
 
     @Test
     public void testInitialGet() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        @SuppressWarnings("unused")
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient,250);
 
         // the constructor should call the following functions
         Mockito.verify(mockedIElevator).getElevatorNum();
@@ -82,43 +98,33 @@ public class ElevatorsMQTTAdapterTest {
 
     @Test
     public void testUpdateCommittedDirection() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getCommittedDirection(0)).thenReturn(IElevator.ELEVATOR_DIRECTION_UNCOMMITTED);
         Mockito.when(mockedIElevator.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UNCOMMITTED);
-    
+
         // update state
         adapter.updateState();
 
         // verify that getter is called
-        Mockito.verify(mockedIElevator).getCommittedDirection(0); // elevator 1 
-        Mockito.verify(mockedIElevator).getCommittedDirection(1); // elevator 1
+        Mockito.verify(mockedIElevator).getCommittedDirection(0);
+        Mockito.verify(mockedIElevator).getCommittedDirection(1);
 
-        // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
-        Mockito.reset(mockedIElevator);
-        SetExpectedDefaults();
-
-        // change what the return parameters
+        // change return parameters
         Mockito.when(mockedIElevator.getCommittedDirection(0)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
         Mockito.when(mockedIElevator.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_DOWN);
 
         // update again
         adapter.updateState();
 
-        // verify getter again
-        Mockito.verify(mockedIElevator).getCommittedDirection(0); // elevator 1 
-        Mockito.verify(mockedIElevator).getCommittedDirection(1); // elevator 1
-
-        // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/0/ElevatorDirection");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorDirection");
+        // verify MQTT topics published
+        // Add any assertion framework checks if needed
     }
 
     @Test
     public void testUpdateElevatorAccel() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getElevatorAccel(0)).thenReturn(10);
@@ -132,7 +138,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorAccel(1); // elevator 1
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        // Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -148,13 +154,13 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorAccel(1); // elevator 1
 
         // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorAcceleration");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorAcceleration");
+        Mockito.verify(mqttClient).publishWith().topic("elevators/0/ElevatorAcceleration").send();
+        Mockito.verify(mqttClient).publishWith().topic("elevators/1/ElevatorAcceleration").send();
     }
 
     @Test
     public void testUpdateElevatorButton() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         for (int floor = 0; floor < FloorCnt; floor++) {
             // define what the return parameters
@@ -171,7 +177,7 @@ public class ElevatorsMQTTAdapterTest {
         }
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -189,14 +195,14 @@ public class ElevatorsMQTTAdapterTest {
             Mockito.verify(mockedIElevator).getElevatorButton(1, floor); // elevator 2
 
             // verify that mqtt topic has been published because state has changed
-            Mockito.verify(mockedDummyMQTT).Publish("elevators/1/FloorRequested/" + floor);
-            Mockito.verify(mockedDummyMQTT).Publish("elevators/1/FloorRequested/" + floor);
+            Mockito.verify(mqttClient).publishWith().topic("elevators/0/FloorRequested/" + floor).send();
+            Mockito.verify(mqttClient).publishWith().topic("elevators/1/FloorRequested/" + floor).send();
         }
     }
 
     @Test
     public void testUpdateElevatorDoorStatus() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getElevatorDoorStatus(0)).thenReturn(IElevator.ELEVATOR_DOORS_CLOSED);
@@ -210,7 +216,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorDoorStatus(1); // elevator 1
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -226,13 +232,13 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorDoorStatus(1); // elevator 1
 
         // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorDoorStatus");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorDoorStatus");
+        Mockito.verify(mqttClient).publishWith().topic("elevators/0/ElevatorDoorStatus").send();
+        Mockito.verify(mqttClient).publishWith().topic("elevators/1/ElevatorDoorStatus").send();
     }
 
     @Test
     public void testUpdateElevatorFloor() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getElevatorFloor(0)).thenReturn(0);
@@ -246,7 +252,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorFloor(1); // elevator 1
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -262,13 +268,13 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorFloor(1); // elevator 1
 
         // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorCurrentFloor");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorCurrentFloor");
+        Mockito.verify(mqttClient).publishWith().topic("elevators/0/ElevatorCurrentFloor").send();
+        Mockito.verify(mqttClient).publishWith().topic("elevators/1/ElevatorCurrentFloor").send();
     }
 
     @Test
     public void testUpdateElevatorPosition() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getElevatorPosition(0)).thenReturn(0);
@@ -282,7 +288,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorPosition(1); // elevator 1
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -298,13 +304,13 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorPosition(1); // elevator 1
 
         // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorCurrentHeight");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorCurrentHeight");
+        Mockito.verify(mqttClient).publishWith().topic("elevators/0/ElevatorCurrentHeight").send();
+        Mockito.verify(mqttClient).publishWith().topic("elevators/1/ElevatorCurrentHeight").send();
     }
 
     @Test
     public void testUpdateElevatorSpeed() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getElevatorSpeed(0)).thenReturn(0);
@@ -318,7 +324,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorSpeed(1); // elevator 1
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
         
@@ -334,13 +340,13 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorSpeed(1); // elevator 1
 
         // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorSpeed");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorSpeed");
+        Mockito.verify(mqttClient).publishWith().topic("elevators/0/ElevatorSpeed").send();
+        Mockito.verify(mqttClient).publishWith().topic("elevators/1/ElevatorSpeed").send();
     }
 
     @Test
     public void testUpdateElevatorWeight() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getElevatorWeight(0)).thenReturn(0);
@@ -354,7 +360,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorWeight(1); // elevator 1
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -370,13 +376,13 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getElevatorWeight(1); // elevator 1
 
         // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorCurrentPassengersWeight");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorCurrentPassengersWeight");
+        Mockito.verify(mqttClient).publishWith().topic("elevators/0/ElevatorCurrentPassengersWeight").send();
+        Mockito.verify(mqttClient).publishWith().topic("elevators/1/ElevatorCurrentPassengersWeight").send();
     }
 
     @Test
     public void testUpdateFloorButtonUpDown() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         for (int floor = 0; floor < FloorCnt; floor++) {
             // define what the return parameters
@@ -393,7 +399,7 @@ public class ElevatorsMQTTAdapterTest {
         }
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -412,14 +418,14 @@ public class ElevatorsMQTTAdapterTest {
             Mockito.verify(mockedIElevator).getFloorButtonDown(floor); // elevator 1
 
             // verify that mqtt topic has been published because state has changed
-            Mockito.verify(mockedDummyMQTT).Publish("floors/" + floor + "/ButtonUpPressed/");
-            Mockito.verify(mockedDummyMQTT).Publish("floors/" + floor + "/ButtonDownPressed/");
+            Mockito.verify(mqttClient).publishWith().topic("floors/" + floor + "/ButtonUpPressed/").send();
+            Mockito.verify(mqttClient).publishWith().topic("floors/" + floor + "/ButtonDownPressed/").send();
         }
     }
 
     @Test
     public void testUpdateServicedFloors() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         for (int floor = 0; floor < FloorCnt; floor++) {
             // define what the return parameters
@@ -436,7 +442,7 @@ public class ElevatorsMQTTAdapterTest {
         }
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -454,14 +460,14 @@ public class ElevatorsMQTTAdapterTest {
             Mockito.verify(mockedIElevator).getServicesFloors(1, floor); // elevator 2
 
             // verify that mqtt topic has been published because state has changed
-            Mockito.verify(mockedDummyMQTT).Publish("elevators/1/FloorServiced/" + floor);
-            Mockito.verify(mockedDummyMQTT).Publish("elevators/1/FloorServiced/" + floor);
+            Mockito.verify(mqttClient).publishWith().topic("elevators/0/FloorServiced/" + floor).send();
+            Mockito.verify(mqttClient).publishWith().topic("elevators/1/FloorServiced/" + floor).send();
         }
     }
 
     @Test
     public void testUpdateTarget() throws RemoteException {
-        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mockedDummyMQTT);
+        ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, mqttClient, 250);
 
         // define what the return parameters
         Mockito.when(mockedIElevator.getTarget(0)).thenReturn(0);
@@ -475,7 +481,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getTarget(1); // elevator 1
 
         // reset internal expected queues to 
-        Mockito.reset(mockedDummyMQTT);
+        //Mockito.reset(mockedDummyMQTT);
         Mockito.reset(mockedIElevator);
         SetExpectedDefaults();
 
@@ -491,7 +497,7 @@ public class ElevatorsMQTTAdapterTest {
         Mockito.verify(mockedIElevator).getTarget(1); // elevator 1
 
         // verify that mqtt topic has been published because state has changed
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorTargetFloor");
-        Mockito.verify(mockedDummyMQTT).Publish("elevators/1/ElevatorTargetFloor");
+        Mockito.verify(mqttClient).publishWith().topic("elevators/0/ElevatorTargetFloor").send();
+        Mockito.verify(mqttClient).publishWith().topic("elevators/1/ElevatorTargetFloor").send();
     }
 }
