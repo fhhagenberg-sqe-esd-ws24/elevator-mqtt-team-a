@@ -61,7 +61,7 @@
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-mqtt-client</artifactId>
       </dependency>
-
+      
       <!-- import testcontainers -->
       <dependency>
         <groupId>org.testcontainers</groupId>

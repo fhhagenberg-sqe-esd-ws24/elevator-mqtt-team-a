@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import com.hivemq.client.internal.mqtt.MqttBlockingClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
+import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import org.mockito.Mock;
@@ -393,52 +394,68 @@ public class ElevatorsMQTTAdapterTest {
   @Test
   public void testSubscribe() throws Exception {
 
-    Mqtt5BlockingClient client = MqttClient.builder()
+    Mqtt5AsyncClient testClient = MqttClient.builder()
         .useMqttVersion5()
         .identifier("BlockingTestClient")
         .serverHost(hiveMQContainer.getHost())
         .serverPort(hiveMQContainer.getMqttPort())
-        .buildBlocking();
-    client.connect();
+        .buildAsync();
 
-    List<String> topicsToSubscribe = List.of("elevators/NrElevators");
-    /*
-     * List<String> topicsToSubscribe = List.of(
-     * "elevators/NrElevators",
-     * "elevators/NrFloors",
-     * "elevators/0/ElevatorCapacity",
-     * "elevators/1/ElevatorCapacity");
-     */
+    CompletableFuture<Void> testClientConnectFuture = testClient.connect()
+        .thenAccept(connAck -> {
+            System.out.println("Connected to host " + hiveMQContainer.getHost() + " on port " + hiveMQContainer.getMqttPort());
+        })
+        .exceptionally(throwable -> {
+          System.err.println("Connection failed: " + throwable.getMessage());
+          return null;
+        });
+
+    testClientConnectFuture.join();
+
+
+    List<String> topicsToSubscribe = List.of(
+    "elevators/NrElevators",
+    "elevators/NrFloors",
+    "elevators/0/ElevatorCapacity",
+    "elevators/1/ElevatorCapacity");
+     
+    Hashtable<String, String> receivedTopicsMsg = new Hashtable<String, String>();
 
     topicsToSubscribe.forEach(topic -> {
-      client.subscribeWith()
-          .topicFilter(topic)
-          .send();
+        testClient.subscribeWith()
+        .topicFilter(topic)
+        .qos(MqttQos.AT_LEAST_ONCE) // QoS level 1
+        .callback(publish -> {
+          String message = new String(publish.getPayloadAsBytes());
+          receivedTopicsMsg.put(publish.getTopic().toString(), message);
+        })
+        .send()
+        .whenComplete((subAck, throwable) -> {
+          if (throwable != null) {
+            // Handle subscription failure
+            System.err.println("Failed to subscribe: " + throwable.getMessage());
+          } else {
+            // Handle successful subscription
+            System.out.println("TestClient subscribed successfully to topic: " + topic);
+          }
+        });
     });
+
 
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
 
-    Hashtable<String, String> receivedTopicsMsg = new Hashtable<String, String>();
 
-    for (int i = 0; i < topicsToSubscribe.size(); i++) {
-      Optional<Mqtt5Publish> receivedMsg = client.publishes(
-          MqttGlobalPublishFilter.ALL).receive(1, TimeUnit.SECONDS);
-      assertTrue(receivedMsg.isPresent(), topicsToSubscribe.get(i));
-      receivedTopicsMsg.put(receivedMsg.get().getTopic().toString(), new String(receivedMsg.get().getPayloadAsBytes()));
-    }
+    TimeUnit.MILLISECONDS.sleep(1000);
 
     for (int i = 0; i < topicsToSubscribe.size(); i++) {
       assertTrue(receivedTopicsMsg.containsKey(topicsToSubscribe.get(i)));
     }
 
     assertEquals(String.valueOf(ElevatorCnt), receivedTopicsMsg.get("elevators/NrElevators"));
-    // assertEquals(String.valueOf(FloorCnt), new
-    // String(receivedTopicsMsg.get("elevators/NrFloors")));
-    // assertEquals(String.valueOf(ElevatorCapacity), new
-    // String(receivedTopicsMsg.get("elevators/0/ElevatorCapacity")));
-    // assertEquals(String.valueOf(ElevatorCapacity), new
-    // String(receivedTopicsMsg.get("elevators/1/ElevatorCapacity")));
+    assertEquals(String.valueOf(FloorCnt), receivedTopicsMsg.get("elevators/NrFloors"));
+    assertEquals(String.valueOf(ElevatorCapacity), receivedTopicsMsg.get("elevators/0/ElevatorCapacity"));
+    assertEquals(String.valueOf(ElevatorCapacity), receivedTopicsMsg.get("elevators/1/ElevatorCapacity"));
 
-    client.disconnect();
+    testClient.disconnect();
   }
 }
