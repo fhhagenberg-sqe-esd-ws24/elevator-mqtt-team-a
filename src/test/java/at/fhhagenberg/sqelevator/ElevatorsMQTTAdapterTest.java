@@ -438,5 +438,7 @@ public class ElevatorsMQTTAdapterTest {
     // String(receivedTopicsMsg.get("elevators/0/ElevatorCapacity")));
     // assertEquals(String.valueOf(ElevatorCapacity), new
     // String(receivedTopicsMsg.get("elevators/1/ElevatorCapacity")));
+
+    client.disconnect();
   }
 }
