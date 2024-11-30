@@ -51,12 +51,12 @@ public class ElevatorsMQTTAdapter {
     connectFuture.join();
 
     try {
-      // fetch number of elevators and publish to subcribers
+      // fetch number of elevators and publish to subscribers
       // TODO: revise Topics (/building-id/elevators ...)
       int ElevatorCnt = controller.getElevatorNum();
       this.publishRetainedMQTT("elevators/NrElevators", ElevatorCnt);
 
-      // fetch capacities of elevators and publish to subcribers
+      // fetch capacities of elevators and publish to subscribers
       List<Integer> ElevatorCapacitys = new ArrayList<>(ElevatorCnt);
       for (int i = 0; i < ElevatorCnt; i++) {
         int capacity = controller.getElevatorCapacity(i);
@@ -64,14 +64,14 @@ public class ElevatorsMQTTAdapter {
         this.publishRetainedMQTT("elevators/" + i + "/ElevatorCapacity", capacity);
       }
 
-      // fetch number of floors and publish to subcribers
+      // fetch number of floors and publish to subscribers
       int floorNumber = controller.getFloorNum();
       this.building = new Building(ElevatorCnt, floorNumber, ElevatorCapacitys);
       this.publishRetainedMQTT("elevators/NrFloors", floorNumber);
 
       // subscribe SetTarget
       this.building.getElevators().forEach((elevator) -> {
-        this.subcribeMQTT("elevators/" + elevator.getElevatorNumber() + "/SetTarget", (topic, message) -> {
+        this.subscribeMQTT("elevators/" + elevator.getElevatorNumber() + "/SetTarget", (topic, message) -> {
           try {
             this.controller.setTarget(elevator.getElevatorNumber(), Integer.parseInt(message));
           } catch (Exception e) {
@@ -327,7 +327,7 @@ public class ElevatorsMQTTAdapter {
   /**
    * 
    */
-  private void subcribeMQTT(String topic, MessageHandler messageHandler) {
+  private void subscribeMQTT(String topic, MessageHandler messageHandler) {
     // Subscribe to a topic
     mqttClient.subscribeWith()
         .topicFilter(topic)
