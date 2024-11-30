@@ -42,6 +42,8 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 @ExtendWith(MockitoExtension.class)
 public class ElevatorsMQTTAdapterTest {
 
+
+
   @Mock
   private IElevator mockedIElevator;
 
@@ -412,16 +414,19 @@ public class ElevatorsMQTTAdapterTest {
 
     testClientConnectFuture.join();
 
-
-    List<String> topicsToSubscribe = List.of(
-    "elevators/NrElevators",
-    "elevators/NrFloors",
-    "elevators/0/ElevatorCapacity",
-    "elevators/1/ElevatorCapacity");
+    // A Hashtable of topics to subscribe to
+    // The key is the topic, the value is the expected message
+    Hashtable<String, String> topicsToSubscribe = new Hashtable<String, String>();
+    topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_NR_ELEVATORS, String.valueOf(ElevatorCnt));
+    topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_NR_FLOORS, String.valueOf(FloorCnt));
+    topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS+ElevatorsMQTTAdapter.TOPIC_SEP+0+ElevatorsMQTTAdapter.TOPIC_SEP+ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY, String.valueOf(ElevatorCapacity));
+    topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS+ElevatorsMQTTAdapter.TOPIC_SEP+1+ElevatorsMQTTAdapter.TOPIC_SEP+ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY, String.valueOf(ElevatorCapacity));
      
+    // A Hashtable to store the received messages
+    // The key is the topic, the value is the received message
     Hashtable<String, String> receivedTopicsMsg = new Hashtable<String, String>();
 
-    topicsToSubscribe.forEach(topic -> {
+    topicsToSubscribe.forEach((topic,expectedvalue) -> {
         testClient.subscribeWith()
         .topicFilter(topic)
         .qos(MqttQos.AT_LEAST_ONCE) // QoS level 1
@@ -441,20 +446,15 @@ public class ElevatorsMQTTAdapterTest {
         });
     });
 
-
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
 
-
+    // wait for all publishes to finish (if 1 second is not enough, get a better PC)
     TimeUnit.MILLISECONDS.sleep(1000);
 
-    for (int i = 0; i < topicsToSubscribe.size(); i++) {
-      assertTrue(receivedTopicsMsg.containsKey(topicsToSubscribe.get(i)));
-    }
-
-    assertEquals(String.valueOf(ElevatorCnt), receivedTopicsMsg.get("elevators/NrElevators"));
-    assertEquals(String.valueOf(FloorCnt), receivedTopicsMsg.get("elevators/NrFloors"));
-    assertEquals(String.valueOf(ElevatorCapacity), receivedTopicsMsg.get("elevators/0/ElevatorCapacity"));
-    assertEquals(String.valueOf(ElevatorCapacity), receivedTopicsMsg.get("elevators/1/ElevatorCapacity"));
+    topicsToSubscribe.forEach((topic, expectedvalue) -> {
+      assertTrue(receivedTopicsMsg.containsKey(topic), "Topic " + topic + " was not received.");
+      assertEquals(expectedvalue, receivedTopicsMsg.get(topic), "Topic " + topic + " has the wrong value.");
+    });
 
     testClient.disconnect();
   }
