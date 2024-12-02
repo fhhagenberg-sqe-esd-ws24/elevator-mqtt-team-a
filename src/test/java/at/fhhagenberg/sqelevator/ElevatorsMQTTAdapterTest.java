@@ -394,21 +394,21 @@ public class ElevatorsMQTTAdapterTest {
   }
 
   @Test
-  public void testSubscribe() throws Exception {
+  public void testPublish() throws Exception {
 
     Mqtt5AsyncClient testClient = MqttClient.builder()
         .useMqttVersion5()
-        .identifier("BlockingTestClient")
+        .identifier("SubscriberTestClient")
         .serverHost(hiveMQContainer.getHost())
         .serverPort(hiveMQContainer.getMqttPort())
         .buildAsync();
 
     CompletableFuture<Void> testClientConnectFuture = testClient.connect()
         .thenAccept(connAck -> {
-            System.out.println("Connected to host " + hiveMQContainer.getHost() + " on port " + hiveMQContainer.getMqttPort());
+            //System.out.println("Connected to host " + hiveMQContainer.getHost() + " on port " + hiveMQContainer.getMqttPort());
         })
         .exceptionally(throwable -> {
-          System.err.println("Connection failed: " + throwable.getMessage());
+          //System.err.println("Connection failed: " + throwable.getMessage());
           return null;
         });
 
@@ -438,10 +438,10 @@ public class ElevatorsMQTTAdapterTest {
         .whenComplete((subAck, throwable) -> {
           if (throwable != null) {
             // Handle subscription failure
-            System.err.println("Failed to subscribe: " + throwable.getMessage());
+            //System.err.println("Failed to subscribe: " + throwable.getMessage());
           } else {
             // Handle successful subscription
-            System.out.println("TestClient subscribed successfully to topic: " + topic);
+            //System.out.println("TestClient subscribed successfully to topic: " + topic);
           }
         });
     });
@@ -458,4 +458,73 @@ public class ElevatorsMQTTAdapterTest {
 
     testClient.disconnect();
   }
+  
+  @Test
+  public void testSubscribe() throws Exception {
+
+    Mqtt5AsyncClient testClient = MqttClient.builder()
+        .useMqttVersion5()
+        .identifier("PublisherTestClient")
+        .serverHost(hiveMQContainer.getHost())
+        .serverPort(hiveMQContainer.getMqttPort())
+        .buildAsync();
+
+    CompletableFuture<Void> testClientConnectFuture = testClient.connect()
+        .thenAccept(connAck -> {
+            //System.out.println("Connected to host " + hiveMQContainer.getHost() + " on port " + hiveMQContainer.getMqttPort());
+        })
+        .exceptionally(throwable -> {
+          //System.err.println("Connection failed: " + throwable.getMessage());
+          return null;
+        });
+
+    testClientConnectFuture.join();
+
+    ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
+
+    // wait for all publishes to finish (if 1 second is not enough, get a better PC)
+    TimeUnit.MILLISECONDS.sleep(1000);
+    
+    Mockito.reset(mockedIElevator);
+
+    String topic = ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 0 + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET;
+    String data = Integer.toString(1);
+    CompletableFuture<Void> testClientPublishFuture = testClient.publishWith()
+        .topic(topic)
+        .payload(data.getBytes())
+        .qos(MqttQos.AT_LEAST_ONCE)
+        .retain(true)
+        .send()
+        .thenAccept(pubAck -> System.out.println("Published message: " + data + " to topic: " + topic))
+        .exceptionally(throwable -> {
+          System.err.println("Failed to publish: " + throwable.getMessage());
+          return null;
+        });
+
+    testClientPublishFuture.join();
+
+    String topic2 = ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 1 + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET;
+    String data2 = Integer.toString(2);
+    testClientPublishFuture = testClient.publishWith()
+        .topic(topic2)
+        .payload(data2.getBytes())
+        .qos(MqttQos.AT_LEAST_ONCE)
+        .retain(true)
+        .send()
+        .thenAccept(pubAck -> System.out.println("Published message: " + data2 + " to topic: " + topic2))
+        .exceptionally(throwable -> {
+          System.err.println("Failed to publish: " + throwable.getMessage());
+          return null;
+        });
+
+    testClientPublishFuture.join();
+
+    // wait for all publishes to finish (if 1 second is not enough, get a better PC)
+    TimeUnit.MILLISECONDS.sleep(1000);
+
+    Mockito.verify(mockedIElevator).setTarget(1, 2);
+
+    testClient.disconnect();
+  }
+  
 }
