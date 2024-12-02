@@ -57,10 +57,24 @@
         </dependency> -->
 
         <!-- Uncomment to use HiveMQ MQTT Client -->
-        <!-- <dependency>
+        <dependency>
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-mqtt-client</artifactId>
-        </dependency> -->
+      </dependency>
+      
+      <!-- import testcontainers -->
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>hivemq</artifactId>
+        <version>1.20.4</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>1.20.4</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
 
     <build>
