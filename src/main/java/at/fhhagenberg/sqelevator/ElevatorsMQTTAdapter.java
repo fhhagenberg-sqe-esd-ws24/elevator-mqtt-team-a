@@ -82,7 +82,6 @@ public class ElevatorsMQTTAdapter {
 
     try {
       // fetch number of elevators and publish to subscribers
-      // TODO: revise Topics (/building-id/elevators ...)
       int ElevatorCnt = controller.getElevatorNum();
       this.publishRetainedMQTT(TOPIC_BUILDING_NR_ELEVATORS, ElevatorCnt);
 
