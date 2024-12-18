@@ -1,6 +1,9 @@
 package at.fhhagenberg.sqelevator;
 
 import java.util.List;
+
+import sqelevator.IElevator;
+
 import java.util.Arrays;
 
 /**

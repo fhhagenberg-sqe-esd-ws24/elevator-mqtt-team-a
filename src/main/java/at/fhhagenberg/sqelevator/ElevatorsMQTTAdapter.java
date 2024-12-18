@@ -10,6 +10,9 @@ import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+
+import sqelevator.IElevator;
+
 import java.util.concurrent.CompletableFuture;
 
 import java.util.ArrayList;
