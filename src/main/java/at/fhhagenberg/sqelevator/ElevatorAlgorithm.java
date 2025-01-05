@@ -255,6 +255,9 @@ public class ElevatorAlgorithm {
       // subscribe to Elevator Speed
       subscribeAndSetCallback(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED, this::updateTopic);
 
+      // subscribe to Elevator Passenger Weight
+      subscribeAndSetCallback(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, this::updateTopic);
+
     } catch (Exception e) {
       System.out.println(e.toString());
     }
@@ -304,7 +307,7 @@ public class ElevatorAlgorithm {
       } else {
 
         String[] topicWithoutBaseTopic = topic.split(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP);
-        String[] splittedTopic = topicWithoutBaseTopic[0].split(TOPIC_SEP);
+        String[] splittedTopic = topicWithoutBaseTopic[1].split(TOPIC_SEP);
 
         Integer elevNr = Integer.parseInt(splittedTopic[0]);
         String subTopic = splittedTopic[1];
@@ -335,6 +338,9 @@ public class ElevatorAlgorithm {
             break;
           case SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED:
             mBuilding.updateElevatorSpeed(elevNr, Integer.parseInt(message));
+            break;
+          case SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT:
+            mBuilding.updateElevatorCurrentPassengersWeight(elevNr, Integer.parseInt((message)));
             break;
           default:
             System.err.println("Unsupported topic!");

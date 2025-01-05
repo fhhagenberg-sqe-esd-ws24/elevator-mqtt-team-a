@@ -5,6 +5,7 @@ import java.util.List;
 import sqelevator.IElevator;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 
 /**
  * ElevatorDataModell represents the state and properties of an elevator.
@@ -40,6 +41,21 @@ public class ElevatorDataModell {
       this.floorsRequested.set(i, false); // or 0 if you prefer an integer placeholder
       this.floorsToService.set(i, true); // or 0 if needed
     }
+  }
+
+  public ElevatorDataModell(ElevatorDataModell other) {
+    this.elevatorNumber = other.elevatorNumber;
+    this.direction = other.direction;
+    this.doorStatus = other.doorStatus;
+    this.targetFloor = other.targetFloor;
+    this.currentFloor = other.currentFloor;
+    this.acceleration = other.acceleration;
+    this.speed = other.speed;
+    this.floorsRequested = new ArrayList<>(other.floorsRequested);
+    this.floorsToService = new ArrayList<>(other.floorsToService);
+    this.currentHeight = other.currentHeight;
+    this.currentPassengersWeight = other.currentPassengersWeight;
+    this.maxPassengers = other.maxPassengers;
   }
 
   /**
