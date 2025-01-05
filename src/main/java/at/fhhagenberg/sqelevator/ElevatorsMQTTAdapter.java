@@ -17,40 +17,45 @@ import java.util.concurrent.CompletableFuture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.io.InputStream;
 
 /**
  * ElevatorsMQTTAdapter which takes data from the PLC and publishes it over MQTT
  */
 public class ElevatorsMQTTAdapter {
-  
+
   // all Topics starting with TOPIC_ are finished topics
-  // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to the correct finished topic
+  // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
+  // the correct finished topic
   public static final String TOPIC_SEP = "/";
 
-  public static final  String TOPIC_BUILDING = "buildings";
-  public static final  String TOPIC_BUILDING_ID = "0";
+  public static final String TOPIC_BUILDING = "buildings";
+  public static final String TOPIC_BUILDING_ID = "0";
 
-  public static final  String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "elevators";
-  public static  final  String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "floors";
-  public static final  String TOPIC_BUILDING_NR_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "NrElevators";
-  public static final  String TOPIC_BUILDING_NR_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "NrFloors";
+  public static final String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "elevators";
+  public static final String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "floors";
+  public static final String TOPIC_BUILDING_NR_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "NrElevators";
+  public static final String TOPIC_BUILDING_NR_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "NrFloors";
 
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";  
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS = "ElevatorDoorStatus";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR = "ElevatorTargetFloor";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR = "ElevatorCurrentFloor";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION = "ElevatorAcceleration";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED = "ElevatorSpeed";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT = "ElevatorCurrentHeight";
-  public static final  String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT = "ElevatorCurrentPassengersWeight";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS = "ElevatorDoorStatus";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR = "ElevatorTargetFloor";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR = "ElevatorCurrentFloor";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION = "ElevatorAcceleration";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED = "ElevatorSpeed";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT = "ElevatorCurrentHeight";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT = "ElevatorCurrentPassengersWeight";
 
-  public static final  String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
-  public static final  String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
-
+  public static final String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
+  public static final String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
 
   private IElevator controller;
   private Building building;
@@ -92,7 +97,8 @@ public class ElevatorsMQTTAdapter {
       for (int i = 0; i < elevatorCnt; i++) {
         int capacity = controller.getElevatorCapacity(i);
         elevatorCapacitys.add(capacity);
-        this.publishRetainedMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + i + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY, capacity);
+        this.publishRetainedMQTT(
+            TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + i + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY, capacity);
       }
 
       // fetch number of floors and publish to subscribers
@@ -102,13 +108,14 @@ public class ElevatorsMQTTAdapter {
 
       // subscribe SetTarget
       this.building.getElevators().forEach((elevator) -> {
-        this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevator.getElevatorNumber() + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (topic, message) -> {
-          try {
-            this.controller.setTarget(elevator.getElevatorNumber(), Integer.parseInt(message));
-          } catch (Exception e) {
-            System.err.println(e.toString());
-          }
-        });
+        this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevator.getElevatorNumber() + TOPIC_SEP
+            + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (topic, message) -> {
+              try {
+                this.controller.setTarget(elevator.getElevatorNumber(), Integer.parseInt(message));
+              } catch (Exception e) {
+                System.err.println(e.toString());
+              }
+            });
       });
     } catch (Exception e) {
       System.out.println(e.toString());
@@ -124,11 +131,14 @@ public class ElevatorsMQTTAdapter {
     ElevatorsMQTTAdapter client = null;
     try {
 
-      String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
-      String appConfigPath = rootPath + "Elevators.properties";
-
       Properties appProps = new Properties();
-      appProps.load(new FileInputStream(appConfigPath));
+      try (InputStream inputStream = Thread.currentThread().getContextClassLoader()
+          .getResourceAsStream("Elevators.properties")) {
+        if (inputStream == null) {
+          throw new IllegalArgumentException("Elevators.properties not found in resources");
+        }
+        appProps.load(inputStream);
+      }
 
       IElevator controller = (IElevator) Naming.lookup(appProps.getProperty("IElevatorRMI"));
 
@@ -138,16 +148,16 @@ public class ElevatorsMQTTAdapter {
           .useMqttVersion5()
           .identifier(appProps.getProperty("MqttIdentifier"))
           .serverHost(appProps.getProperty("MqttHost")) // Public HiveMQ broker
-          .serverPort((Integer) appProps.get("MqttPort")) // Default MQTT port
+          .serverPort(Integer.parseInt(appProps.getProperty("MqttPort"))) // Default MQTT port
           .buildAsync();
 
       client = new ElevatorsMQTTAdapter(controller, mqttClient,
-          (Integer) appProps.get("PollingIntervall"));
+          Integer.parseInt(appProps.getProperty("PollingIntervall")));
 
       client.run();
 
     } catch (InterruptedException e) {
-      if (client != null){
+      if (client != null) {
         client.closeConnection();
       }
       Thread.currentThread().interrupt();
@@ -185,14 +195,16 @@ public class ElevatorsMQTTAdapter {
       if (this.building.getUpButtonState(floornr) != floorUpButton) {
         this.building.updateUpButtonState(floornr, floorUpButton);
         // Publish over MQTT
-        publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED, floorUpButton);
+        publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED,
+            floorUpButton);
       }
 
       boolean floorDownButton = this.controller.getFloorButtonDown(floornr);
       if (this.building.getDownButtonState(floornr) != floorUpButton) {
         this.building.updateDownButtonState(floornr, floorUpButton);
         // Publish over MQTT
-        publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED, floorDownButton);
+        publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED,
+            floorDownButton);
       }
     }
   }
@@ -254,7 +266,8 @@ public class ElevatorsMQTTAdapter {
       if (!this.building.getElevator(elevnr).getFloorRequested(floornr).equals(remoteFloorRequested)) {
         this.building.updateElevatorFloorRequested(elevnr, floornr, remoteFloorRequested);
         // Publish over MQTT
-        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floornr, remoteFloorRequested);
+        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP
+            + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floornr, remoteFloorRequested);
       }
     }
   }
@@ -272,7 +285,8 @@ public class ElevatorsMQTTAdapter {
       if (!this.building.getElevator(elevnr).getFloorToService(floornr).equals(remoteFloorServiced)) {
         this.building.updateElevatorFloorRequested(elevnr, floornr, remoteFloorServiced);
         // Publish over MQTT
-        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floornr, remoteFloorServiced);
+        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP
+            + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floornr, remoteFloorServiced);
       }
     }
   }
