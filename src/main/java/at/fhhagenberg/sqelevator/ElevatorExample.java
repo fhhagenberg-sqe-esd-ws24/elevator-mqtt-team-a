@@ -5,8 +5,13 @@ import java.rmi.RemoteException;
 
 import sqelevator.IElevator;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 
 public class ElevatorExample {
+
+	private static Logger logger = LogManager.getLogger(ElevatorExample.class);
 
 	private IElevator controller;
 
@@ -29,41 +34,42 @@ public class ElevatorExample {
 	}
 
 	private void displayElevatorSettings() throws RemoteException {
-		System.out.println("ELEVATOR SETTINGS");
+		logger.info("ELEVATOR SETTINGS");
 		
-		System.out.println("Current clock tick: " + controller.getClockTick());
+		logger.info("Current clock tick: " + controller.getClockTick());
 		
-		System.out.println("Number of elevators: " + controller.getElevatorNum());
-		System.out.println("Number of floor: " + controller.getFloorNum());
-		System.out.println("Floor height: " + controller.getFloorHeight());
+		logger.info("Number of elevators: " + controller.getElevatorNum());
+		logger.info("Number of floor: " + controller.getFloorNum());
+		logger.info("Floor height: " + controller.getFloorHeight());
 		
-		System.out.print("Floor buttons Up pressed: ");
+		String output  = new String("Floor buttons Up pressed: ");
 		for (int floor=0; floor<controller.getFloorNum(); floor++) {
-			System.out.print(controller.getFloorButtonUp(floor) ? "1" : "0");
+			output += (controller.getFloorButtonUp(floor) ? "1" : "0");
 		}
-		System.out.println();
-		System.out.print("Floor buttons Down pressed: ");
+		logger.info(output);
+
+		output  = new String("Floor buttons Down pressed: ");
 		for (int floor=0; floor<controller.getFloorNum(); floor++) {
-			System.out.print(controller.getFloorButtonDown(floor) ? "1" : "0");
+			output += (controller.getFloorButtonDown(floor) ? "1" : "0");
 		}
-		System.out.println();		
+		logger.info(output);		
 		
 		for (int elevator=0; elevator<controller.getElevatorNum(); elevator++) {
-			System.out.println("Settings of elevator number: " + elevator);
-			System.out.println("  Floor: " + controller.getElevatorFloor(elevator));
-			System.out.println("  Position: " + controller.getElevatorPosition(elevator));
-			System.out.println("  Target: " + controller.getTarget(elevator));
-			System.out.println("  Committed direction: " + controller.getCommittedDirection(elevator));
-			System.out.println("  Door status: " + controller.getElevatorDoorStatus(elevator));		
-			System.out.println("  Speed: " + controller.getElevatorSpeed(elevator));
-			System.out.println("  Acceleration: " + controller.getElevatorAccel(elevator));
-			System.out.println("  Capacity: " + controller.getElevatorCapacity(elevator));
-			System.out.println("  Weight: " + controller.getElevatorWeight(elevator));
-			System.out.print("  Buttons pressed: ");
+			logger.info("Settings of elevator number: " + elevator);
+			logger.info("  Floor: " + controller.getElevatorFloor(elevator));
+			logger.info("  Position: " + controller.getElevatorPosition(elevator));
+			logger.info("  Target: " + controller.getTarget(elevator));
+			logger.info("  Committed direction: " + controller.getCommittedDirection(elevator));
+			logger.info("  Door status: " + controller.getElevatorDoorStatus(elevator));		
+			logger.info("  Speed: " + controller.getElevatorSpeed(elevator));
+			logger.info("  Acceleration: " + controller.getElevatorAccel(elevator));
+			logger.info("  Capacity: " + controller.getElevatorCapacity(elevator));
+			logger.info("  Weight: " + controller.getElevatorWeight(elevator));
+			output  = new String("  Buttons pressed: ");
 			for (int floor=0; floor<controller.getFloorNum(); floor++) {
-				System.out.print(controller.getElevatorButton(elevator, floor) ? "1" : "0");
+				output += (controller.getElevatorButton(elevator, floor) ? "1" : "0");
 			}
-			System.out.println();
+			logger.info(output);
 		}
 		
 	}
