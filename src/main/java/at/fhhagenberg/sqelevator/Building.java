@@ -10,6 +10,9 @@ import java.util.Arrays;
  */
 public class Building {
 
+  private static final String INVALID_FLOOR_NUMBER_WAS = "Invalid Floor Number Was ";
+  private static final String INVALID_ELEVATOR_NUMBER = "Invalid Elevator Number";
+
   /** Hold information of Elevators in the Building */
   private final List<ElevatorDataModell> elevators;
 
@@ -96,7 +99,7 @@ public class Building {
    */
   public void updateElevatorDirection(int elevatorNr, int direction) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setDirection(direction);
   }
@@ -110,7 +113,7 @@ public class Building {
    */
   public void updateElevatorDoorStatus(int elevatorNr, int doorStatus) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setDoorStatus(doorStatus);
   }
@@ -124,7 +127,7 @@ public class Building {
    */
   public void updateElevatorTargetFloor(int elevatorNr, int targetFloor) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setTargetFloor(targetFloor);
   }
@@ -138,7 +141,7 @@ public class Building {
    */
   public void updateElevatorCurrentFloor(int elevatorNr, int currentFloor) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setCurrentFloor(currentFloor);
   }
@@ -152,7 +155,7 @@ public class Building {
    */
   public void updateElevatorAcceleration(int elevatorNr, int acceleration) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setAcceleration(acceleration);
   }
@@ -166,7 +169,7 @@ public class Building {
    */
   public void updateElevatorSpeed(int elevatorNr, int speed) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setSpeed(speed);
   }
@@ -181,7 +184,7 @@ public class Building {
    */
   public void updateElevatorFloorRequested(int elevatorNr, int floorRequested, boolean isRequested) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setFloorRequested(floorRequested, isRequested);
   }
@@ -196,7 +199,7 @@ public class Building {
    */
   public void updateElevatorFloorToService(int elevatorNr, int floorToService, boolean doService) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setFloorToService(floorToService, doService);
   }
@@ -210,7 +213,7 @@ public class Building {
    */
   public void updateElevatorCurrentHeight(int elevatorNr, int currentHeight) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setCurrentHeight(currentHeight);
   }
@@ -224,7 +227,7 @@ public class Building {
    */
   public void updateElevatorCurrentPassengersWeight(int elevatorNr, int currentPassengersWeight) {
     if (elevatorNr < 0 || elevatorNr >= elevators.size()) {
-      throw new IllegalArgumentException("Invalid Elevator Number");
+      throw new IllegalArgumentException(INVALID_ELEVATOR_NUMBER);
     }
     elevators.get(elevatorNr).setCurrentPassengersWeight(currentPassengersWeight);
   }
@@ -238,7 +241,7 @@ public class Building {
    */
   public void updateUpButtonState(int floorNr, boolean state) {
     if (floorNr < 0 || floorNr >= nrFloors) {
-      throw new IllegalArgumentException("Invalid Floor Number! Was " + floorNr);
+      throw new IllegalArgumentException(INVALID_FLOOR_NUMBER_WAS + floorNr);
     }
     floorUpButtonsPressed.set(floorNr, state);
   }
@@ -252,7 +255,7 @@ public class Building {
    */
   public boolean getUpButtonState(int floorNr) {
     if (floorNr < 0 || floorNr >= nrFloors) {
-      throw new IllegalArgumentException("Invalid Floor Number Was " + floorNr);
+      throw new IllegalArgumentException(INVALID_FLOOR_NUMBER_WAS + floorNr);
     }
     return floorUpButtonsPressed.get(floorNr);
   }
@@ -266,7 +269,7 @@ public class Building {
    */
   public void updateDownButtonState(int floorNr, boolean state) {
     if (floorNr < 0 || floorNr >= nrFloors) {
-      throw new IllegalArgumentException("Invalid Floor Number Was " + floorNr);
+      throw new IllegalArgumentException(INVALID_FLOOR_NUMBER_WAS + floorNr);
     }
     floorDownButtonsPressed.set(floorNr, state);
   }
@@ -280,7 +283,7 @@ public class Building {
    */
   public boolean getDownButtonState(int floorNr) {
     if (floorNr < 0 || floorNr >= nrFloors) {
-      throw new IllegalArgumentException("Invalid Floor Number Was " + floorNr);
+      throw new IllegalArgumentException(INVALID_FLOOR_NUMBER_WAS + floorNr);
     }
     return floorDownButtonsPressed.get(floorNr);
   }
