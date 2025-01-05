@@ -90,7 +90,7 @@ public class ElevatorAlgorithm {
       Mqtt5AsyncClient mqttClient = MqttClient.builder()
           .automaticReconnectWithDefaultConfig()
           .useMqttVersion5()
-          .identifier(appProps.getProperty("MqttIdentifier"))
+          .identifier(appProps.getProperty("MqttIdentifier") + "_algorithm")
           .serverHost(appProps.getProperty("MqttHost")) // Public HiveMQ broker
           .serverPort(Integer.parseInt(appProps.getProperty("MqttPort"))) // Default MQTT port
           .buildAsync();
