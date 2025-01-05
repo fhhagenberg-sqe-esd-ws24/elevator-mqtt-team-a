@@ -121,6 +121,7 @@ public class ElevatorsMQTTAdapter {
    * @param args arguments passed to main function
    */
   public static void main(String[] args) {
+    ElevatorsMQTTAdapter client = null;
     try {
 
       String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
@@ -140,12 +141,16 @@ public class ElevatorsMQTTAdapter {
           .serverPort((Integer) appProps.get("MqttPort")) // Default MQTT port
           .buildAsync();
 
-      ElevatorsMQTTAdapter client = new ElevatorsMQTTAdapter(controller, mqttClient,
+      client = new ElevatorsMQTTAdapter(controller, mqttClient,
           (Integer) appProps.get("PollingIntervall"));
 
       client.run();
-      client.closeConnection();
 
+    } catch (InterruptedException e) {
+      if (client != null){
+        client.closeConnection();
+      }
+      Thread.currentThread().interrupt();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -154,7 +159,7 @@ public class ElevatorsMQTTAdapter {
   /**
    * Runner
    */
-  private void run() {
+  private void run() throws InterruptedException {
     // Loop Forever
     while (true) {
       this.updateState();
@@ -162,6 +167,7 @@ public class ElevatorsMQTTAdapter {
         Thread.sleep(this.pollingIntervall);
       } catch (InterruptedException e) {
         System.out.println("Thread was interrupted");
+        throw e;
       }
     }
   }
