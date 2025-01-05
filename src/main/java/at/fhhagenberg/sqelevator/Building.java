@@ -45,6 +45,9 @@ public class Building {
   }
 
   public Building(Building other) {
+    if (other == null) {
+      throw new IllegalArgumentException("Building cannot be null");
+    }
     this.elevators = new ArrayList<ElevatorDataModell>(other.elevators);
     this.nrFloors = other.nrFloors;
     this.floorUpButtonsPressed = new ArrayList<Boolean>(other.floorUpButtonsPressed);
