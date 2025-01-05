@@ -44,6 +44,13 @@ public class Building {
     }
   }
 
+  public Building(Building other) {
+    this.elevators = new ArrayList<ElevatorDataModell>(other.elevators);
+    this.nrFloors = other.nrFloors;
+    this.floorUpButtonsPressed = new ArrayList<Boolean>(other.floorUpButtonsPressed);
+    this.floorDownButtonsPressed = new ArrayList<Boolean>(other.floorDownButtonsPressed);
+  }
+
   /**
    * Gets the Elevators in the Building
    * 

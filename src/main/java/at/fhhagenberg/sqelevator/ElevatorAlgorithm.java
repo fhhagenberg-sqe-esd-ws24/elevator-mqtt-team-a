@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.hivemq.client.mqtt.MqttClient;
+import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
@@ -333,7 +334,68 @@ public class ElevatorAlgorithm {
     }
 
     private void doAlgorithm() {
-        Building currentStatus = mBuilding;
+        Building currentStatus = new Building(mBuilding);
+
+        // do algorithm stuff
+
+        // move all elevators to the top and back down to ground floor
+        for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
+            publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (currentStatus.getElevator(elevNr).getCurrentFloor() + 1) % mNrOfFloors);
+        }
+    }
+
+    /**
+     * Publish updates over MQTT for a specific Elevator, if there
+     * are changes
+     * 
+     * @param topic  contains the topic string
+     * @param T      data for the topic
+     * @param retain determines if the message should be retained
+     * @throws IllegalStateException is thrown when not connected to broker
+     */
+    private <T> void publishMQTTHelper(String topic, T data, boolean retain) throws IllegalStateException {
+
+        System.out.println("Publishing \"" + topic + ": " + data + "\"");
+
+        if (this.mqttClient.getState() != MqttClientState.CONNECTED) {
+        throw new IllegalStateException("Client not connected to Broker!");
+        }
+
+        this.mqttClient.publishWith()
+            .topic(topic)
+            .payload(data.toString().getBytes())
+            .qos(MqttQos.AT_LEAST_ONCE)
+            .retain(retain)
+            .send()
+            .thenAccept(pubAck -> System.out.println("Published message: " + data.toString() + " to topic: " + topic))
+            .exceptionally(throwable -> {
+            System.err.println("Failed to publish: " + throwable.getMessage());
+            return null;
+            });
+    }
+
+    /**
+     * Publish updates over MQTT for a specific Elevator, if there
+     * are changes
+     * 
+     * @param topic contains the topic string
+     * @param T     data for the topic
+     */
+    private <T> void publishRetainedMQTT(String topic, T data) {
+
+        this.publishMQTTHelper(topic, data, true);
+    }
+
+    /**
+     * Publish updates over MQTT for a specific Elevator, if there
+     * are changes
+     * 
+     * @param topic contains the topic string
+     * @param T     data for the topic
+     */
+    private <T> void publishMQTT(String topic, T data) {
+
+        this.publishMQTTHelper(topic, data, false);
     }
 
     /**
