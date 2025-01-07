@@ -1,6 +1,7 @@
 package at.fhhagenberg.sqelevator;
 
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.timeout;
 
 import java.rmi.RemoteException;
 import java.util.stream.IntStream;
@@ -25,6 +26,8 @@ import org.testcontainers.hivemq.HiveMQContainer;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import static org.awaitility.Awaitility.await;
 
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
@@ -448,11 +451,10 @@ public class ElevatorsMQTTAdapterTest {
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
 
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
-    TimeUnit.MILLISECONDS.sleep(1000);
 
     topicsToSubscribe.forEach((topic, expectedvalue) -> {
-      assertTrue(receivedTopicsMsg.containsKey(topic), "Topic " + topic + " was not received.");
-      assertEquals(expectedvalue, receivedTopicsMsg.get(topic), "Topic " + topic + " has the wrong value.");
+      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertTrue(receivedTopicsMsg.containsKey(topic), "Topic " + topic + " was not received."));
+      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertEquals(expectedvalue, receivedTopicsMsg.get(topic), "Topic " + topic + " has the wrong value."));
     });
 
     testClient.disconnect();
@@ -481,7 +483,7 @@ public class ElevatorsMQTTAdapterTest {
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
 
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
-    TimeUnit.MILLISECONDS.sleep(1000);
+    await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> assertTrue(true));
     
     Mockito.reset(mockedIElevator);
 
@@ -518,9 +520,7 @@ public class ElevatorsMQTTAdapterTest {
     testClientPublishFuture.join();
 
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
-    TimeUnit.MILLISECONDS.sleep(1000);
-
-    Mockito.verify(mockedIElevator).setTarget(1, 2);
+    Mockito.verify(mockedIElevator, timeout(1000)).setTarget(1, 2);
 
     testClient.disconnect();
   }
