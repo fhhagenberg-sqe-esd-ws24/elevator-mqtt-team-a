@@ -42,34 +42,34 @@ public class ElevatorExample {
 		logger.info("Number of floor: " + controller.getFloorNum());
 		logger.info("Floor height: " + controller.getFloorHeight());
 		
-		String output  = new String("Floor buttons Up pressed: ");
+		StringBuilder sb = new StringBuilder("Floor buttons Up pressed: ");
 		for (int floor=0; floor<controller.getFloorNum(); floor++) {
-			output += (controller.getFloorButtonUp(floor) ? "1" : "0");
+			sb.append(controller.getFloorButtonUp(floor) ? "1" : "0");
 		}
-		logger.info(output);
+		logger.info(sb.toString());
 
-		output  = new String("Floor buttons Down pressed: ");
+		sb.replace(0, sb.length(),"Floor buttons Down pressed: ");
 		for (int floor=0; floor<controller.getFloorNum(); floor++) {
-			output += (controller.getFloorButtonDown(floor) ? "1" : "0");
+			sb.append(controller.getFloorButtonDown(floor) ? "1" : "0");
 		}
-		logger.info(output);		
+		logger.info(sb.toString());	
 		
 		for (int elevator=0; elevator<controller.getElevatorNum(); elevator++) {
-			logger.info("Settings of elevator number: " + elevator);
-			logger.info("  Floor: " + controller.getElevatorFloor(elevator));
-			logger.info("  Position: " + controller.getElevatorPosition(elevator));
-			logger.info("  Target: " + controller.getTarget(elevator));
-			logger.info("  Committed direction: " + controller.getCommittedDirection(elevator));
-			logger.info("  Door status: " + controller.getElevatorDoorStatus(elevator));		
-			logger.info("  Speed: " + controller.getElevatorSpeed(elevator));
-			logger.info("  Acceleration: " + controller.getElevatorAccel(elevator));
-			logger.info("  Capacity: " + controller.getElevatorCapacity(elevator));
-			logger.info("  Weight: " + controller.getElevatorWeight(elevator));
-			output  = new String("  Buttons pressed: ");
+			logger.info("Settings of elevator number: {}", elevator);
+			logger.info("  Floor: {}", controller.getElevatorFloor(elevator));
+			logger.info("  Position: {}", controller.getElevatorPosition(elevator));
+			logger.info("  Target: {}", controller.getTarget(elevator));
+			logger.info("  Committed direction: {}", controller.getCommittedDirection(elevator));
+			logger.info("  Door status: {}", controller.getElevatorDoorStatus(elevator));		
+			logger.info("  Speed: {}", controller.getElevatorSpeed(elevator));
+			logger.info("  Acceleration: {}", controller.getElevatorAccel(elevator));
+			logger.info("  Capacity: {}", controller.getElevatorCapacity(elevator));
+			logger.info("  Weight: {}", controller.getElevatorWeight(elevator));
+			sb.replace(0, sb.length(),"  Buttons pressed: ");
 			for (int floor=0; floor<controller.getFloorNum(); floor++) {
-				output += (controller.getElevatorButton(elevator, floor) ? "1" : "0");
+				sb.append(controller.getElevatorButton(elevator, floor) ? "1" : "0");
 			}
-			logger.info(output);
+			logger.info(sb.toString());
 		}
 		
 	}

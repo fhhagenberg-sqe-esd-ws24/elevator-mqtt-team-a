@@ -6,7 +6,7 @@ import org.apache.logging.log4j.LogManager;
 public class DummyMQTT {
   private static Logger logger = LogManager.getLogger(DummyMQTT.class);
     public void publish(String topic) {
-      logger.info("MQTT Publish called: " + topic);
+      logger.info("MQTT Publish called: {}", topic);
       // do nothing
     }
   }

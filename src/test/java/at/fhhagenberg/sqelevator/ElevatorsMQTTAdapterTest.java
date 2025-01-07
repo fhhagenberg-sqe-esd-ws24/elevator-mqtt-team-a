@@ -493,9 +493,9 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> logger.info("Published message: " + data + " to topic: " + topic))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data, topic))
         .exceptionally(throwable -> {
-          logger.error("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
 
@@ -509,9 +509,9 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> logger.info("Published message: " + data2 + " to topic: " + topic2))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data2, topic2))
         .exceptionally(throwable -> {
-          logger.error("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
 

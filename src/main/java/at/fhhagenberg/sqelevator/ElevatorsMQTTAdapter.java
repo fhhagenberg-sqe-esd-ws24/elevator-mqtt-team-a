@@ -81,7 +81,7 @@ public class ElevatorsMQTTAdapter {
           logger.info("Connected successfully!");
         })
         .exceptionally(throwable -> {
-          logger.error("Connection failed: " + throwable.getMessage());
+          logger.error("Connection failed: {}", throwable.getMessage());
           return null;
         });
 
@@ -212,7 +212,7 @@ public class ElevatorsMQTTAdapter {
     // update everything that is specific to an elevator
     for (int elevnr = 0; elevnr < this.building.getNrElevators(); elevnr++) {
 
-      logger.info("Polling Elevator Nr. " + elevnr);
+      logger.info("Polling Elevator Nr. {}", elevnr);
       pollAndUpdateElevator(elevnr);
 
     }
@@ -327,7 +327,7 @@ public class ElevatorsMQTTAdapter {
    */
   private <T> void publishMQTTHelper(String topic, T data, boolean retain) throws IllegalStateException {
 
-    logger.info("Publishing \"" + topic + ": " + data + "\"");
+    logger.info("Publishing \"{}: {}\"", topic, data);
 
     if (this.mqttClient.getState() != MqttClientState.CONNECTED) {
       throw new IllegalStateException("Client not connected to Broker!");
@@ -339,9 +339,9 @@ public class ElevatorsMQTTAdapter {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(retain)
         .send()
-        .thenAccept(pubAck -> logger.info("Published message: " + data.toString() + " to topic: " + topic))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data.toString(), topic))
         .exceptionally(throwable -> {
-          logger.error("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
   }
@@ -386,10 +386,10 @@ public class ElevatorsMQTTAdapter {
         .whenComplete((subAck, throwable) -> {
           if (throwable != null) {
             // Handle subscription failure
-            logger.error("Failed to subscribe: " + throwable.getMessage());
+            logger.error("Failed to subscribe: {}",throwable.getMessage());
           } else {
             // Handle successful subscription
-            logger.info("Subscribed successfully to topic: " + topic);
+            logger.info("Subscribed successfully to topic: {}", topic);
           }
         });
   }
