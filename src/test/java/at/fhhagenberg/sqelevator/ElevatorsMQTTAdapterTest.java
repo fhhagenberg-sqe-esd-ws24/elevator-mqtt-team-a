@@ -1,6 +1,7 @@
 package at.fhhagenberg.sqelevator;
 
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.timeout;
 
 import java.rmi.RemoteException;
 import java.util.stream.IntStream;
@@ -25,17 +26,23 @@ import org.testcontainers.hivemq.HiveMQContainer;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import static org.awaitility.Awaitility.await;
 
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
 import net.bytebuddy.asm.Advice.Unused;
 import sqelevator.IElevator;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
 public class ElevatorsMQTTAdapterTest {
 
 
+  private static Logger logger = LogManager.getLogger(ElevatorsMQTTAdapterTest.class);
 
   @Mock
   private IElevator mockedIElevator;
@@ -90,7 +97,12 @@ public class ElevatorsMQTTAdapterTest {
 
   @Test
   public void testInitialGet() throws Exception {
-
+    logger.trace("We've just greeted the user!");
+    logger.debug("We've just greeted the user!");
+    logger.info("We've just greeted the user!");
+    logger.warn("We've just greeted the user!");
+    logger.error("We've just greeted the user!");
+    logger.fatal("We've just greeted the user!");
     // Create the adapter
     @SuppressWarnings("unused")
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
@@ -387,7 +399,7 @@ public class ElevatorsMQTTAdapterTest {
   }
 
   @Test
-  public void testPublish() throws Exception {
+  public void testPublish(){
 
     Mqtt5AsyncClient testClient = MqttClient.builder()
         .useMqttVersion5()
@@ -439,11 +451,10 @@ public class ElevatorsMQTTAdapterTest {
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
 
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
-    TimeUnit.MILLISECONDS.sleep(1000);
 
     topicsToSubscribe.forEach((topic, expectedvalue) -> {
-      assertTrue(receivedTopicsMsg.containsKey(topic), "Topic " + topic + " was not received.");
-      assertEquals(expectedvalue, receivedTopicsMsg.get(topic), "Topic " + topic + " has the wrong value.");
+      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertTrue(receivedTopicsMsg.containsKey(topic), "Topic " + topic + " was not received."));
+      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertEquals(expectedvalue, receivedTopicsMsg.get(topic), "Topic " + topic + " has the wrong value."));
     });
 
     testClient.disconnect();
@@ -472,7 +483,7 @@ public class ElevatorsMQTTAdapterTest {
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
 
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
-    TimeUnit.MILLISECONDS.sleep(1000);
+    await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> assertTrue(true));
     
     Mockito.reset(mockedIElevator);
 
@@ -484,9 +495,9 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> System.out.println("Published message: " + data + " to topic: " + topic))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data, topic))
         .exceptionally(throwable -> {
-          System.err.println("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
 
@@ -500,18 +511,16 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> System.out.println("Published message: " + data2 + " to topic: " + topic2))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data2, topic2))
         .exceptionally(throwable -> {
-          System.err.println("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
 
     testClientPublishFuture.join();
 
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
-    TimeUnit.MILLISECONDS.sleep(1000);
-
-    Mockito.verify(mockedIElevator).setTarget(1, 2);
+    Mockito.verify(mockedIElevator, timeout(1000)).setTarget(1, 2);
 
     testClient.disconnect();
   }

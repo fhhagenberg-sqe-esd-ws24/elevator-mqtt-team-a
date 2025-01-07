@@ -19,11 +19,15 @@ import java.util.List;
 import java.util.Properties;
 import java.io.InputStream;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 /**
  * ElevatorsMQTTAdapter which takes data from the PLC and publishes it over MQTT
  */
 public class ElevatorsMQTTAdapter {
 
+  private static Logger logger = LogManager.getLogger(ElevatorsMQTTAdapter.class);
   // all Topics starting with TOPIC_ are finished topics
   // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
   // the correct finished topic
@@ -81,10 +85,10 @@ public class ElevatorsMQTTAdapter {
     // Connect to the broker
     CompletableFuture<Void> connectFuture = mqttClient.connect()
         .thenAccept(connAck -> {
-          System.out.println("Connected successfully!");
+          logger.info("Connected successfully!");
         })
         .exceptionally(throwable -> {
-          System.err.println("Connection failed: " + throwable.getMessage());
+          logger.error("Connection failed: {}", throwable.getMessage());
           return null;
         });
 
@@ -122,10 +126,10 @@ public class ElevatorsMQTTAdapter {
         this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevator.getElevatorNumber() + TOPIC_SEP
             + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (topic, message) -> {
               try {
-                System.out.println("Set Target: " + message); 
+                logger.info("Set Target: {}", message); 
                 this.controller.setTarget(elevator.getElevatorNumber(), Integer.parseInt(message));
               } catch (Exception e) {
-                System.err.println(e.toString());
+                logger.error(e.toString());
               }
             });
       });
@@ -137,12 +141,12 @@ public class ElevatorsMQTTAdapter {
               try {
                 this.controller.setCommittedDirection(elevator.getElevatorNumber(), Integer.parseInt(message));
               } catch (Exception e) {
-                System.err.println(e.toString());
+                logger.error(e.toString());
               }
             });
       });
     } catch (Exception e) {
-      System.out.println(e.toString());
+      logger.error(e.toString());
     }
   }
 
@@ -200,7 +204,7 @@ public class ElevatorsMQTTAdapter {
       try {
         Thread.sleep(this.pollingIntervall);
       } catch (InterruptedException e) {
-        System.out.println("Thread was interrupted");
+        logger.info("Thread was interrupted");
         throw e;
       }
     }
@@ -276,6 +280,7 @@ public class ElevatorsMQTTAdapter {
 
     // update everything that is specific to an elevator
     for (int elevnr = 0; elevnr < this.building.getNrElevators(); elevnr++) {
+      logger.info("Polling Elevator Nr. {}", elevnr);
       pollAndUpdateElevator(elevnr);
     }
 
@@ -283,7 +288,7 @@ public class ElevatorsMQTTAdapter {
     try {
       pollAndExecuteForFloorButtons();
     } catch (Exception e) {
-      System.out.println(e.toString());
+      logger.info(e.toString());
     }
   }
 
@@ -376,7 +381,7 @@ public class ElevatorsMQTTAdapter {
           SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT);
 
     } catch (Exception e) {
-      System.out.println(e.toString());
+      logger.error(e.toString());
     }
   }
 
@@ -391,7 +396,7 @@ public class ElevatorsMQTTAdapter {
    */
   private <T> void publishMQTTHelper(String topic, T data, boolean retain) throws IllegalStateException {
 
-    //System.out.println("Publishing \"" + topic + ": " + data + "\"");
+    logger.info("Publishing \"{}: {}\"", topic, data);
 
     if (this.mqttClient.getState() != MqttClientState.CONNECTED) {
       throw new IllegalStateException("Client not connected to Broker!");
@@ -403,9 +408,9 @@ public class ElevatorsMQTTAdapter {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(retain)
         .send()
-        .thenAccept(pubAck -> System.out.println("Published message: " + data.toString() + " to topic: " + topic))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
-          System.err.println("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
   }
@@ -450,10 +455,10 @@ public class ElevatorsMQTTAdapter {
         .whenComplete((subAck, throwable) -> {
           if (throwable != null) {
             // Handle subscription failure
-            System.err.println("Failed to subscribe: " + throwable.getMessage());
+            logger.error("Failed to subscribe: {}",throwable.getMessage());
           } else {
             // Handle successful subscription
-            System.out.println("Subscribed successfully to topic: " + topic);
+            logger.info("Subscribed successfully to topic: {}", topic);
           }
         });
   }
@@ -463,7 +468,7 @@ public class ElevatorsMQTTAdapter {
     try {
       this.mqttClient.disconnect();
     } catch (Exception e) {
-      System.out.println(e.toString());
+      logger.error(e.toString());
     }
   }
 }
