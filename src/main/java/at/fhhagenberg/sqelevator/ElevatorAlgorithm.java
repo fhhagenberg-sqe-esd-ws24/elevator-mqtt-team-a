@@ -77,10 +77,6 @@ public class ElevatorAlgorithm {
   private ArrayList<Integer> mElevatorCapacitys;
   AtomicBoolean mInitialized = new AtomicBoolean(false);
 
-
-  // dummy member for testing
-  private int mCurrentFloor = 0;
-
   private Building mBuilding;
 
   /**
@@ -141,10 +137,8 @@ public class ElevatorAlgorithm {
 
     // subscribe for the current state topic
     this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "response", (topic, message) -> {
-      System.out.println("------------- " + message + " ---------------");
       if (message.equals("done")) {
-        System.out.println("-------- Initialized ----------");
-        mInitialized.set(true);;
+        mInitialized.set(true);
       }
     });
 
@@ -152,7 +146,7 @@ public class ElevatorAlgorithm {
     askForCurrentState();
 
     // wait for all parameters to be set
-    //while(!mInitialized.get());
+    while(!mInitialized.get());
 
     try {
       while (true) {
@@ -610,7 +604,7 @@ public class ElevatorAlgorithm {
             // Handle successful subscription
             //System.out.println("Subscribed successfully to topic: " + topic);
           }
-        });
+        }).join();
   }
 
   /**
