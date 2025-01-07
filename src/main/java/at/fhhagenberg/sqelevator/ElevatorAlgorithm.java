@@ -143,7 +143,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
         Thread.sleep(1000);
       }
     } catch (Exception e) {
-      System.err.println("Error in main loop: " + e.toString() + "hier1");
+      System.err.println("Error in main loop: " + e.toString());
     }
   }
 
@@ -160,7 +160,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
           mNrOfElevators = Integer.parseInt(message);
           latchElevaCnt.countDown();
         } catch (Exception e) {
-          System.err.println("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: " + e.toString() + "hier2");
+          System.err.println("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: " + e.toString());
         }
       });
 
@@ -183,7 +183,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 mElevatorCapacitys.set(elevNr, Integer.parseInt(message));
                 latchElevCap.countDown();
               } catch (Exception e) {
-                System.err.println("Error subscribing to TOPIC_BUILDING_ELEVATORS: " + e.toString() + "hier3");
+                System.err.println("Error subscribing to TOPIC_BUILDING_ELEVATORS: " + e.toString());
               }
             });
       }
@@ -197,7 +197,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
           mNrOfFloors = Integer.parseInt(message);
           latchFloorNr.countDown();
         } catch (Exception e) {
-          System.err.println("Error subscribing to TOPIC_BUILDING_NR_FLOORS: " + e.toString() + "hier4");
+          System.err.println("Error subscribing to TOPIC_BUILDING_NR_FLOORS: " + e.toString());
         }
       });
 
@@ -205,7 +205,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       this.mBuilding = new Building(mNrOfElevators, mNrOfFloors, mElevatorCapacitys);
 
     } catch (Exception e) {
-      System.out.println("Error in subscribeToInitials: " + e.toString() + "hier5");
+      System.out.println("Error in subscribeToInitials: " + e.toString());
     }
   }
 
@@ -219,7 +219,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                System.err.println(e.toString() + "hier6");
+                System.err.println(e.toString());
               }
             });
       }
@@ -231,7 +231,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                System.err.println(e.toString() + "hier7");
+                System.err.println(e.toString());
               }
             });
       }
@@ -244,7 +244,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  System.err.println(e.toString() + "hier8");
+                  System.err.println(e.toString());
                 }
               });
         }
@@ -258,7 +258,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  System.err.println(e.toString() + "hier9");
+                  System.err.println(e.toString());
                 }
               });
         }
@@ -286,7 +286,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, this::updateTopic);
 
     } catch (Exception e) {
-      System.out.println(e.toString() + "hier10");
+      System.out.println(e.toString());
     }
   }
 
@@ -303,7 +303,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
         // call callback
         callback.accept(topic, message);
       } catch (Exception e) {
-        System.err.println(e.toString() + "hier11");
+        System.err.println(e.toString());
       }
     });
   }
@@ -543,7 +543,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
     try {
       this.mqttClient.disconnect();
     } catch (Exception e) {
-      System.out.println(e.toString() + "hier12");
+      System.out.println(e.toString());
     }
   }
 }
