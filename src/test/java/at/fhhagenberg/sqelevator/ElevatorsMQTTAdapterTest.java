@@ -31,11 +31,15 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import net.bytebuddy.asm.Advice.Unused;
 import sqelevator.IElevator;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
 public class ElevatorsMQTTAdapterTest {
 
 
+  private static Logger logger = LogManager.getLogger(ElevatorsMQTTAdapterTest.class);
 
   @Mock
   private IElevator mockedIElevator;
@@ -90,7 +94,12 @@ public class ElevatorsMQTTAdapterTest {
 
   @Test
   public void testInitialGet() throws Exception {
-
+    logger.trace("We've just greeted the user!");
+    logger.debug("We've just greeted the user!");
+    logger.info("We've just greeted the user!");
+    logger.warn("We've just greeted the user!");
+    logger.error("We've just greeted the user!");
+    logger.fatal("We've just greeted the user!");
     // Create the adapter
     @SuppressWarnings("unused")
     ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
@@ -484,9 +493,9 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> System.out.println("Published message: " + data + " to topic: " + topic))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data, topic))
         .exceptionally(throwable -> {
-          System.err.println("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
 
@@ -500,9 +509,9 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> System.out.println("Published message: " + data2 + " to topic: " + topic2))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data2, topic2))
         .exceptionally(throwable -> {
-          System.err.println("Failed to publish: " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
 
