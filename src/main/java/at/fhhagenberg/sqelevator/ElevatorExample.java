@@ -36,11 +36,11 @@ public class ElevatorExample {
 	private void displayElevatorSettings() throws RemoteException {
 		logger.info("ELEVATOR SETTINGS");
 		
-		logger.info("Current clock tick: " + controller.getClockTick());
+		logger.info("Current clock tick: {}", controller.getClockTick());
 		
-		logger.info("Number of elevators: " + controller.getElevatorNum());
-		logger.info("Number of floor: " + controller.getFloorNum());
-		logger.info("Floor height: " + controller.getFloorHeight());
+		logger.info("Number of elevators: {}", controller.getElevatorNum());
+		logger.info("Number of floor: {}", controller.getFloorNum());
+		logger.info("Floor height: {}", controller.getFloorHeight());
 		
 		StringBuilder sb = new StringBuilder("Floor buttons Up pressed: ");
 		for (int floor=0; floor<controller.getFloorNum(); floor++) {

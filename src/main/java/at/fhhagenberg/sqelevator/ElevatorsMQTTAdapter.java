@@ -339,7 +339,7 @@ public class ElevatorsMQTTAdapter {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(retain)
         .send()
-        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data.toString(), topic))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
           logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
