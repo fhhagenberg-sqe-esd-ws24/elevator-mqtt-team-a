@@ -15,7 +15,7 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
 import at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter.MessageHandler;
 
-public class ElevatorAlgorithm {
+public class ElevatorAlgorithm extends BaseMQTT {
 
   // all Topics starting with TOPIC_ are finished topics
   // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
@@ -86,20 +86,8 @@ public class ElevatorAlgorithm {
   /**
    * CTOR
    */
-  public ElevatorAlgorithm(Mqtt5AsyncClient _mqttClient) {
-    this.mqttClient = _mqttClient;
-
-    // Connect to the broker
-    CompletableFuture<Void> connectFuture = mqttClient.connect()
-        .thenAccept(connAck -> {
-          System.out.println("Connected successfully!");
-        })
-        .exceptionally(throwable -> {
-          System.err.println("Connection failed: " + throwable.getMessage());
-          return null;
-        });
-
-    connectFuture.join();
+  public ElevatorAlgorithm(Mqtt5AsyncClient mqttClient) {
+    super(mqttClient);
   }
 
   public static void main(String[] args) {
@@ -552,76 +540,6 @@ public class ElevatorAlgorithm {
     }
 
     return nearestFloor;
-  }
-
-  /**
-   * Publish updates over MQTT for a specific Elevator, if there
-   * are changes
-   * 
-   * @param topic  contains the topic string
-   * @param T      data for the topic
-   * @param retain determines if the message should be retained
-   * @throws IllegalStateException is thrown when not connected to broker
-   */
-  private <T> void publishMQTTHelper(String topic, T data, boolean retain) throws IllegalStateException {
-
-    System.out.println("Publishing \"" + topic + ": " + data + "\"");
-
-    if (this.mqttClient.getState() != MqttClientState.CONNECTED) {
-      throw new IllegalStateException("Client not connected to Broker!");
-    }
-
-    this.mqttClient.publishWith()
-        .topic(topic)
-        .payload(data.toString().getBytes())
-        .qos(MqttQos.AT_LEAST_ONCE)
-        .retain(retain)
-        .send()
-        .thenAccept(pubAck -> {
-          /*
-           * System.out.println("Published message: " + data.toString() + " to topic: " +
-           * topic))
-           */ })
-        .exceptionally(throwable -> {
-          System.err.println("Failed to publish: " + throwable.getMessage());
-          return null;
-        });
-  }
-
-  /**
-   * Publish updates over MQTT for a specific Elevator, if there
-   * are changes
-   * 
-   * @param topic contains the topic string
-   * @param T     data for the topic
-   */
-  private <T> void publishMQTT(String topic, T data) {
-
-    this.publishMQTTHelper(topic, data, false);
-  }
-
-  /**
-   * 
-   */
-  private void subscribeMQTT(String topic, MessageHandler messageHandler) {
-    // Subscribe to a topic
-    mqttClient.subscribeWith()
-        .topicFilter(topic)
-        .qos(MqttQos.AT_LEAST_ONCE) // QoS level 1
-        .callback(publish -> {
-          String message = new String(publish.getPayloadAsBytes());
-          messageHandler.handleMessage(topic, message);
-        }) // Use the provided message handler
-        .send()
-        .whenComplete((subAck, throwable) -> {
-          if (throwable != null) {
-            // Handle subscription failure
-            System.err.println("Failed to subscribe: " + throwable.getMessage());
-          } else {
-            // Handle successful subscription
-            // System.out.println("Subscribed successfully to topic: " + topic);
-          }
-        });
   }
 
   /**
