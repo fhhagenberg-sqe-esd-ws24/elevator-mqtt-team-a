@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 /**
  * ElevatorsMQTTAdapter which takes data from the PLC and publishes it over MQTT
  */
-public class ElevatorsMQTTAdapter {
+public class ElevatorsMQTTAdapter extends BaseMQTT {
 
   private static Logger logger = LogManager.getLogger(ElevatorsMQTTAdapter.class);
   // all Topics starting with TOPIC_ are finished topics
@@ -62,7 +62,8 @@ public class ElevatorsMQTTAdapter {
   public static final String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
   public static final String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
 
-  public final static String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "PublishCurrentState";
+  public final static String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID
+      + TOPIC_SEP + "PublishCurrentState";
 
   private IElevator controller;
   private Building building;
@@ -78,21 +79,9 @@ public class ElevatorsMQTTAdapter {
    * CTOR
    */
   public ElevatorsMQTTAdapter(IElevator controller, Mqtt5AsyncClient usedMqttClient, int pollingIntervall) {
+    super(usedMqttClient);
     this.controller = controller;
-    this.mqttClient = usedMqttClient;
     this.pollingIntervall = pollingIntervall;
-
-    // Connect to the broker
-    CompletableFuture<Void> connectFuture = mqttClient.connect()
-        .thenAccept(connAck -> {
-          logger.info("Connected successfully!");
-        })
-        .exceptionally(throwable -> {
-          logger.error("Connection failed: {}", throwable.getMessage());
-          return null;
-        });
-
-    connectFuture.join();
 
     try {
       // fetch number of elevators and publish to subscribers
@@ -114,7 +103,7 @@ public class ElevatorsMQTTAdapter {
       this.publishRetainedMQTT(TOPIC_BUILDING_NR_FLOORS, floorNumber);
 
       // subscribe to the current state publish request
-      this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE +  TOPIC_SEP + "request", (topic, message) -> {
+      this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "request", (topic, message) -> {
         if (message.equals("needUpdate")) {
           publishCurrentState();
           this.publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "response", "done");
@@ -126,7 +115,7 @@ public class ElevatorsMQTTAdapter {
         this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevator.getElevatorNumber() + TOPIC_SEP
             + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (topic, message) -> {
               try {
-                logger.info("Set Target: {}", message); 
+                logger.info("Set Target: {}", message);
                 this.controller.setTarget(elevator.getElevatorNumber(), Integer.parseInt(message));
               } catch (Exception e) {
                 logger.error(e.toString());
@@ -212,35 +201,49 @@ public class ElevatorsMQTTAdapter {
 
   private void publishCurrentState() {
     for (int elevNr = 0; elevNr < this.building.getNrElevators(); elevNr++) {
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION, 
-        this.building.getElevator(elevNr).getDirection());
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS, 
-        this.building.getElevator(elevNr).getDoorStatus());
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR, 
-        this.building.getElevator(elevNr).getTargetFloor());
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR, 
-        this.building.getElevator(elevNr).getCurrentFloor());
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION, 
-        this.building.getElevator(elevNr).getAcceleration());
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED, 
-        this.building.getElevator(elevNr).getSpeed());
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION,
+          this.building.getElevator(elevNr).getDirection());
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS,
+          this.building.getElevator(elevNr).getDoorStatus());
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR,
+          this.building.getElevator(elevNr).getTargetFloor());
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR,
+          this.building.getElevator(elevNr).getCurrentFloor());
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION,
+          this.building.getElevator(elevNr).getAcceleration());
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED,
+          this.building.getElevator(elevNr).getSpeed());
 
       for (int floorNr = 0; floorNr < this.building.getNrFloors(); floorNr++) {
-        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + 
-          TOPIC_SEP + floorNr, this.building.getElevator(elevNr).getFloorRequested(floorNr));
-        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + 
-          TOPIC_SEP + floorNr, this.building.getElevator(elevNr).getFloorToService(floorNr));
+        publishMQTT(
+            TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED +
+                TOPIC_SEP + floorNr,
+            this.building.getElevator(elevNr).getFloorRequested(floorNr));
+        publishMQTT(
+            TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED +
+                TOPIC_SEP + floorNr,
+            this.building.getElevator(elevNr).getFloorToService(floorNr));
       }
 
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT, 
-        this.building.getElevator(elevNr).getCurrentHeight());
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, 
-        this.building.getElevator(elevNr).getCurrentPassengersWeight());
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT,
+          this.building.getElevator(elevNr).getCurrentHeight());
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP
+              + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT,
+          this.building.getElevator(elevNr).getCurrentPassengersWeight());
     }
 
     for (int floorNr = 0; floorNr < this.building.getNrFloors(); floorNr++) {
-      publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED, this.building.getUpButtonState(floorNr));
-      publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED, this.building.getDownButtonState(floorNr));
+      publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED,
+          this.building.getUpButtonState(floorNr));
+      publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED,
+          this.building.getDownButtonState(floorNr));
     }
   }
 
@@ -258,7 +261,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateUpButtonState(floornr, floorUpButton);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED,
-          floorUpButton);
+            floorUpButton);
       }
 
       boolean floorDownButton = this.controller.getFloorButtonDown(floornr);
@@ -266,7 +269,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateDownButtonState(floornr, floorUpButton);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED,
-          floorDownButton);
+            floorDownButton);
       }
     }
   }
@@ -327,7 +330,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateElevatorFloorRequested(elevnr, floornr, remoteFloorRequested);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP
-          + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floornr, remoteFloorRequested);
+            + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floornr, remoteFloorRequested);
       }
     }
   }
@@ -346,7 +349,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateElevatorFloorRequested(elevnr, floornr, remoteFloorServiced);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP
-          + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floornr, remoteFloorServiced);
+            + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floornr, remoteFloorServiced);
       }
     }
   }
@@ -380,93 +383,6 @@ public class ElevatorsMQTTAdapter {
           this.controller.getElevatorWeight(elevnr), this.building::updateElevatorCurrentPassengersWeight, elevnr,
           SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT);
 
-    } catch (Exception e) {
-      logger.error(e.toString());
-    }
-  }
-
-  /**
-   * Publish updates over MQTT for a specific Elevator, if there
-   * are changes
-   * 
-   * @param topic  contains the topic string
-   * @param T      data for the topic
-   * @param retain determines if the message should be retained
-   * @throws IllegalStateException is thrown when not connected to broker
-   */
-  private <T> void publishMQTTHelper(String topic, T data, boolean retain) throws IllegalStateException {
-
-    logger.info("Publishing \"{}: {}\"", topic, data);
-
-    if (this.mqttClient.getState() != MqttClientState.CONNECTED) {
-      throw new IllegalStateException("Client not connected to Broker!");
-    }
-
-    this.mqttClient.publishWith()
-        .topic(topic)
-        .payload(data.toString().getBytes())
-        .qos(MqttQos.AT_LEAST_ONCE)
-        .retain(retain)
-        .send()
-        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
-        .exceptionally(throwable -> {
-          logger.error("Failed to publish: {}", throwable.getMessage());
-          return null;
-        });
-  }
-
-  /**
-   * Publish updates over MQTT for a specific Elevator, if there
-   * are changes
-   * 
-   * @param topic contains the topic string
-   * @param T     data for the topic
-   */
-  private <T> void publishRetainedMQTT(String topic, T data) {
-
-    this.publishMQTTHelper(topic, data, true);
-  }
-
-  /**
-   * Publish updates over MQTT for a specific Elevator, if there
-   * are changes
-   * 
-   * @param topic contains the topic string
-   * @param T     data for the topic
-   */
-  private <T> void publishMQTT(String topic, T data) {
-
-    this.publishMQTTHelper(topic, data, false);
-  }
-
-  /**
-   * 
-   */
-  private void subscribeMQTT(String topic, MessageHandler messageHandler) {
-    // Subscribe to a topic
-    mqttClient.subscribeWith()
-        .topicFilter(topic)
-        .qos(MqttQos.AT_LEAST_ONCE) // QoS level 1
-        .callback(publish -> {
-          String message = new String(publish.getPayloadAsBytes());
-          messageHandler.handleMessage(topic, message);
-        }) // Use the provided message handler
-        .send()
-        .whenComplete((subAck, throwable) -> {
-          if (throwable != null) {
-            // Handle subscription failure
-            logger.error("Failed to subscribe: {}",throwable.getMessage());
-          } else {
-            // Handle successful subscription
-            logger.info("Subscribed successfully to topic: {}", topic);
-          }
-        });
-  }
-
-  // DTOR
-  protected void closeConnection() {
-    try {
-      this.mqttClient.disconnect();
     } catch (Exception e) {
       logger.error(e.toString());
     }

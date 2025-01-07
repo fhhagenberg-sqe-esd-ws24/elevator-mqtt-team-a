@@ -7,7 +7,11 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import java.util.function.BiConsumer;
 import java.util.concurrent.CompletableFuture;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class BaseMQTT {
+  private static Logger logger = LogManager.getLogger(BaseMQTT.class);
 
   protected final Mqtt5AsyncClient mqttClient;
 
@@ -22,10 +26,10 @@ public class BaseMQTT {
     // Connect to the broker
     CompletableFuture<Void> connectFuture = mqttClient.connect()
         .thenAccept(connAck -> {
-          System.out.println("Connected successfully!");
+          logger.info("Connected successfully!");
         })
         .exceptionally(throwable -> {
-          System.err.println("Connection failed: " + throwable.getMessage());
+          logger.error("Connection failed: {}", throwable.getMessage());
           return null;
         });
 
@@ -40,7 +44,10 @@ public class BaseMQTT {
    * @param data   The message payload
    * @param retain Whether the message should be retained
    */
-  public <T> void publishMQTT(String topic, T data, boolean retain) {
+  public <T> void publishMQTTHelper(String topic, T data, boolean retain) {
+
+    logger.info("Publishing \"{}: {}\"", topic, data);
+
     if (mqttClient.getState() != MqttClientState.CONNECTED) {
       throw new IllegalStateException("Client not connected to Broker!");
     }
@@ -51,9 +58,9 @@ public class BaseMQTT {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(retain)
         .send()
-        .thenAccept(pubAck -> System.out.println("Published to topic: " + topic + " with message: " + data))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
-          System.err.println("Failed to publish to topic: " + topic + " - " + throwable.getMessage());
+          logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
         });
   }
@@ -65,7 +72,19 @@ public class BaseMQTT {
    * @param data  The message payload
    */
   public <T> void publishMQTT(String topic, T data) {
-    publishMQTT(topic, data, false);
+    publishMQTTHelper(topic, data, false);
+  }
+
+  /**
+   * Publish updates over MQTT for a specific Elevator, if there
+   * are changes
+   * 
+   * @param topic contains the topic string
+   * @param T     data for the topic
+   */
+  public <T> void publishRetainedMQTT(String topic, T data) {
+
+    this.publishMQTTHelper(topic, data, true);
   }
 
   /**
@@ -85,11 +104,29 @@ public class BaseMQTT {
         .send()
         .whenComplete((subAck, throwable) -> {
           if (throwable != null) {
-            System.err.println("Failed to subscribe to topic: " + topic + " - " + throwable.getMessage());
+            logger.error("Failed to subscribe: {}", throwable.getMessage());
           } else {
-            System.out.println("Subscribed successfully to topic: " + topic);
+            logger.info("Subscribed successfully to topic: {}", topic);
           }
+        }).join();
+  }
+
+  /**
+   * Closes the connection to the MQTT broker.
+   */
+  public void closeConnection() {
+    try {
+      if (mqttClient.getState() == MqttClientState.CONNECTED) {
+        mqttClient.disconnect().thenRun(() -> {
+          System.out.println("Disconnected from MQTT broker.");
+        }).exceptionally(throwable -> {
+          System.err.println("Failed to disconnect: " + throwable.getMessage());
+          return null;
         });
+      }
+    } catch (Exception e) {
+      System.err.println("Error while closing MQTT connection: " + e.getMessage());
+    }
   }
 
   /**
@@ -98,9 +135,8 @@ public class BaseMQTT {
   protected void finalize() {
     try {
       mqttClient.disconnect();
-      System.out.println("MQTT client disconnected.");
     } catch (Exception e) {
-      System.err.println("Error during MQTT disconnect: " + e.getMessage());
+      logger.error(e.toString());
     }
   }
 }
