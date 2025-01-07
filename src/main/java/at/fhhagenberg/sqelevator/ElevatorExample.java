@@ -46,13 +46,13 @@ public class ElevatorExample {
 		for (int floor=0; floor<controller.getFloorNum(); floor++) {
 			sb.append(controller.getFloorButtonUp(floor) ? "1" : "0");
 		}
-		logger.info(sb.toString());
+		logger.info("{}",sb);
 
 		sb.replace(0, sb.length(),"Floor buttons Down pressed: ");
 		for (int floor=0; floor<controller.getFloorNum(); floor++) {
 			sb.append(controller.getFloorButtonDown(floor) ? "1" : "0");
 		}
-		logger.info(sb.toString());	
+		logger.info("{}",sb);	
 		
 		for (int elevator=0; elevator<controller.getElevatorNum(); elevator++) {
 			logger.info("Settings of elevator number: {}", elevator);
@@ -69,7 +69,7 @@ public class ElevatorExample {
 			for (int floor=0; floor<controller.getFloorNum(); floor++) {
 				sb.append(controller.getElevatorButton(elevator, floor) ? "1" : "0");
 			}
-			logger.info(sb.toString());
+			logger.info("{}",sb);
 		}
 		
 	}
