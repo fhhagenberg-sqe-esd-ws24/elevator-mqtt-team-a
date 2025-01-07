@@ -399,7 +399,7 @@ public class ElevatorsMQTTAdapterTest {
   }
 
   @Test
-  public void testPublish() throws Exception {
+  public void testPublish(){
 
     Mqtt5AsyncClient testClient = MqttClient.builder()
         .useMqttVersion5()
