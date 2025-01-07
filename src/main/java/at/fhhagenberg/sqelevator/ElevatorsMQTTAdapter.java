@@ -43,6 +43,7 @@ public class ElevatorsMQTTAdapter {
 
   public static final String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
   public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION = "SetCommittedDirection";
   public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
   public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";
   public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
@@ -109,10 +110,10 @@ public class ElevatorsMQTTAdapter {
       this.publishRetainedMQTT(TOPIC_BUILDING_NR_FLOORS, floorNumber);
 
       // subscribe to the current state publish request
-      this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, (topic, message) -> {
-        if (message.equals("request")) {
+      this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE +  TOPIC_SEP + "request", (topic, message) -> {
+        if (message.equals("needUpdate")) {
           publishCurrentState();
-          this.publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, "done");
+          this.publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "response", "done");
         }
       });
 
@@ -121,7 +122,20 @@ public class ElevatorsMQTTAdapter {
         this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevator.getElevatorNumber() + TOPIC_SEP
             + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (topic, message) -> {
               try {
+                System.out.println("Set Target: " + message); 
                 this.controller.setTarget(elevator.getElevatorNumber(), Integer.parseInt(message));
+              } catch (Exception e) {
+                System.err.println(e.toString());
+              }
+            });
+      });
+
+      // subscribe SetCommittedDirection
+      this.building.getElevators().forEach((elevator) -> {
+        this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevator.getElevatorNumber() + TOPIC_SEP
+            + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, (topic, message) -> {
+              try {
+                this.controller.setCommittedDirection(elevator.getElevatorNumber(), Integer.parseInt(message));
               } catch (Exception e) {
                 System.err.println(e.toString());
               }
@@ -287,9 +301,6 @@ public class ElevatorsMQTTAdapter {
   private <T> void pollAndExecute(T param1, T param2, BiConsumer<Integer, T> function, int elevnr,
       String mqttTopicForPublish) throws RemoteException {
     if (!param1.equals(param2)) {
-
-      System.out.println("Is: " + param1 + " , Was: " + param2);
-
       function.accept(elevnr, param2);
       // Publish over MQTT
       this.publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP + mqttTopicForPublish, param2);
@@ -380,7 +391,7 @@ public class ElevatorsMQTTAdapter {
    */
   private <T> void publishMQTTHelper(String topic, T data, boolean retain) throws IllegalStateException {
 
-    System.out.println("Publishing \"" + topic + ": " + data + "\"");
+    //System.out.println("Publishing \"" + topic + ": " + data + "\"");
 
     if (this.mqttClient.getState() != MqttClientState.CONNECTED) {
       throw new IllegalStateException("Client not connected to Broker!");

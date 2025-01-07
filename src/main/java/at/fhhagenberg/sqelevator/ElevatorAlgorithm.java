@@ -36,6 +36,7 @@ public class ElevatorAlgorithm {
 
   public final static String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
   public final static String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION = "SetCommittedDirection";
   public final static String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
   public final static String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";
   public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
@@ -51,6 +52,22 @@ public class ElevatorAlgorithm {
   public final static String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
 
   public final static String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "PublishCurrentState";
+
+  /** State variable for elevator doors open.	 */
+	public final static int ELEVATOR_DOORS_OPEN = 1;	
+	/** State variable for elevator doors closed. */
+	public final static int ELEVATOR_DOORS_CLOSED = 2;
+	/** State variable for elevator doors opening. */
+	public final static int ELEVATOR_DOORS_OPENING = 3;
+	/** State variable for elevator doors closing. */
+	public final static int ELEVATOR_DOORS_CLOSING = 4;
+		
+	/** State variable for elevator status when going up */
+	public final static int ELEVATOR_DIRECTION_UP = 0;				
+	/** State variable for elevator status when going down. */
+	public final static int ELEVATOR_DIRECTION_DOWN = 1;			
+	/** State variables for elevator status stopped and uncommitted. */
+	public final static int ELEVATOR_DIRECTION_UNCOMMITTED = 2;	
 
   private Mqtt5AsyncClient mqttClient;
 
@@ -123,7 +140,7 @@ public class ElevatorAlgorithm {
     subscribeToVariables();
 
     // subscribe for the current state topic
-    this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, (topic, message) -> {
+    this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "response", (topic, message) -> {
       System.out.println("------------- " + message + " ---------------");
       if (message.equals("done")) {
         System.out.println("-------- Initialized ----------");
@@ -148,7 +165,7 @@ public class ElevatorAlgorithm {
   }
 
   private void askForCurrentState() {
-    publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, "request");
+    publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "request", "needUpdate");
   }
 
   private void subscribeToInitials() {
@@ -310,6 +327,7 @@ public class ElevatorAlgorithm {
 
   private void updateTopic(String topic, String message) {
     synchronized (this) {
+      System.out.println("Topic: " + topic + ", Message: " + message);
       if (topic.contains(TOPIC_BUILDING_FLOORS)) {
         String baseTopic = TOPIC_BUILDING_FLOORS + TOPIC_SEP;
         String topicWithoutBaseTopic = topic.substring(baseTopic.length(), topic.length());
@@ -377,17 +395,144 @@ public class ElevatorAlgorithm {
     }
   }
 
+  /**
+   * 
+   */
   private void doAlgorithm() {
     Building currentStatus = new Building(this.mBuilding);
 
     // do algorithm stuff
 
+    /*
     // move all elevators to the top and back down to ground floor
     for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
-      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET,
-          (currentStatus.getElevator(elevNr).getCurrentFloor() + 1) % mNrOfFloors);
+      if (currentStatus.getElevator(elevNr).getTargetFloor() != (currentStatus.getElevator(elevNr).getCurrentFloor() + 1))
+      {
+        int targetFloor = currentStatus.getElevator(elevNr).getTargetFloor();
+        int currentFloor = currentStatus.getElevator(elevNr).getCurrentFloor();
+        if (targetFloor != currentFloor + 1 && currentStatus.getElevator(elevNr).getDoorStatus() == ELEVATOR_DOORS_OPEN) {
+          publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, ELEVATOR_DIRECTION_UP);
+          publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (currentFloor + 1) % mNrOfFloors);
+        }
+      }
+    }*/
+    
+    // Step 1: Iterate through all elevators
+    for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
+      ElevatorDataModell elevator = mBuilding.getElevator(elevNr);
+      int currentFloor = elevator.getCurrentFloor();
+      int newTargetFloor = elevator.getCurrentFloor();
+      int direction = elevator.getDirection();
+
+      // check if doors are open (else break)
+      if (currentStatus.getElevator(elevNr).getDoorStatus() != ELEVATOR_DOORS_OPEN) {
+        continue;
+      }
+
+      if (direction == ELEVATOR_DIRECTION_UNCOMMITTED) {
+        // Check for the nearest request (up or down)
+        int nearestRequest = findNearestRequest(currentStatus, elevNr, currentFloor);
+        if (nearestRequest != -1) {
+          int dir = nearestRequest > currentFloor ? ELEVATOR_DIRECTION_UP : ELEVATOR_DIRECTION_DOWN;
+          System.out.println("Nearest Request: " + nearestRequest);
+          publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, dir);
+          publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, nearestRequest);
+        }
+        continue;
+      }
+
+      // Step 2: Check requests in the current direction
+      if (direction == ELEVATOR_DIRECTION_UP) { // Moving up
+        for (int floor = currentFloor + 1; floor < mNrOfFloors; floor++) {
+          if (shouldServiceFloor(currentStatus, elevNr, floor)) {
+            publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, floor);
+            newTargetFloor = floor;
+            break;
+          }
+        }
+      } else if (direction == ELEVATOR_DIRECTION_DOWN) { // Moving down
+        for (int floor = currentFloor - 1; floor >= 0; floor--) {
+          if (shouldServiceFloor(currentStatus, elevNr, floor)) {
+            publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, floor);
+            newTargetFloor = floor;
+            break;
+          }
+        }
+      }
+
+      // Step 3: If no requests in the current direction, reverse direction or idle
+      if (newTargetFloor == currentFloor) {
+        if (direction == ELEVATOR_DIRECTION_DOWN) { // Reverse to check downward floors
+          for (int floor = currentFloor - 1; floor >= 0; floor--) {
+            if (shouldServiceFloor(currentStatus, elevNr, floor)) {
+              publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, ELEVATOR_DIRECTION_DOWN);
+              publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, floor);
+              newTargetFloor = floor;
+              break;
+            }
+          }
+        } else if (direction == ELEVATOR_DIRECTION_UP) { // Reverse to check upward floors
+          for (int floor = currentFloor + 1; floor < mNrOfFloors; floor++) {
+            if (shouldServiceFloor(currentStatus, elevNr, floor)) {
+              publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, ELEVATOR_DIRECTION_UP);
+              publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, floor);
+              newTargetFloor = floor;
+              break;
+            }
+          }
+        }
+
+        // If still no target, remain idle
+        if (newTargetFloor == currentFloor) {
+          publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, ELEVATOR_DIRECTION_UNCOMMITTED);
+        }
+      }
+    }
+  }
+
+  /**
+   * Determines whether the elevator should service a specific floor.
+   *
+   * @param building The building instance
+   * @param elevator The elevator instance
+   * @param floor The floor number to check
+   * @return True if the floor should be serviced, otherwise false
+   */
+  private boolean shouldServiceFloor(Building building, int elevNr, int floor) {
+    // Check if the floor has a request
+    boolean floorUpRequested = building.getUpButtonState(floor);
+    boolean floorDownRequested = building.getDownButtonState(floor);
+    boolean floorRequestedByPassengers = building.getElevator(elevNr).getFloorRequested(floor);
+
+    // Check if the elevator is assigned to service this floor
+    boolean elevatorServicesFloor = building.getElevator(elevNr).getFloorToService(floor);
+
+    return elevatorServicesFloor && (floorUpRequested || floorDownRequested || floorRequestedByPassengers);
+  }
+
+  /**
+   * Finds the nearest floor with a request for an idle elevator.
+   *
+   * @param building The building instance
+   * @param elevator The elevator instance
+   * @param currentFloor The elevator's current floor
+   * @return The nearest floor with a request, or -1 if no requests exist
+   */
+  private int findNearestRequest(Building building, int elevNr, int currentFloor) {
+    int nearestFloor = -1;
+    int minDistance = Integer.MAX_VALUE;
+
+    for (int floor = 0; floor < mNrOfFloors; floor++) {
+        if (shouldServiceFloor(building, elevNr, floor) && floor != currentFloor) {
+            int distance = Math.abs(floor - currentFloor);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestFloor = floor;
+            }
+        }
     }
 
+    return nearestFloor;
   }
 
   /**
