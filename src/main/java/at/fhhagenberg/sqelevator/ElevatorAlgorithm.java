@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import com.hivemq.client.mqtt.MqttClient;
@@ -49,12 +50,19 @@ public class ElevatorAlgorithm {
   public final static String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
   public final static String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
 
+  public final static String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "PublishCurrentState";
+
   private Mqtt5AsyncClient mqttClient;
 
   // default information about the elevator system
   private int mNrOfFloors = 0;
   private int mNrOfElevators = 0;
   private ArrayList<Integer> mElevatorCapacitys;
+  AtomicBoolean mInitialized = new AtomicBoolean(false);
+
+
+  // dummy member for testing
+  private int mCurrentFloor = 0;
 
   private Building mBuilding;
 
@@ -109,22 +117,41 @@ public class ElevatorAlgorithm {
    */
   private void run() {
     // get initial information for building
-    subcribeToInitials();
+    subscribeToInitials();
 
     // subscribe to the variables that can change during operation
     subscribeToVariables();
 
+    // subscribe for the current state topic
+    this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, (topic, message) -> {
+      System.out.println("------------- " + message + " ---------------");
+      if (message.equals("done")) {
+        System.out.println("-------- Initialized ----------");
+        mInitialized.set(true);;
+      }
+    });
+
+    // ask all buildings to publish the current state
+    askForCurrentState();
+
+    // wait for all parameters to be set
+    //while(!mInitialized.get());
+
     try {
       while (true) {
         doAlgorithm();
-        Thread.sleep(100);
+        Thread.sleep(1000);
       }
     } catch (Exception e) {
-      System.err.println("Error in main loop: " + e.toString());
+      System.err.println("Error in main loop: " + e.toString() + "hier1");
     }
   }
 
-  private void subcribeToInitials() {
+  private void askForCurrentState() {
+    publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, "request");
+  }
+
+  private void subscribeToInitials() {
     try {
       // Subscribe to elevator count
       CountDownLatch latchElevaCnt = new CountDownLatch(1);
@@ -133,7 +160,7 @@ public class ElevatorAlgorithm {
           mNrOfElevators = Integer.parseInt(message);
           latchElevaCnt.countDown();
         } catch (Exception e) {
-          System.err.println("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: " + e.toString());
+          System.err.println("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: " + e.toString() + "hier2");
         }
       });
 
@@ -156,7 +183,7 @@ public class ElevatorAlgorithm {
                 mElevatorCapacitys.set(elevNr, Integer.parseInt(message));
                 latchElevCap.countDown();
               } catch (Exception e) {
-                System.err.println("Error subscribing to TOPIC_BUILDING_ELEVATORS: " + e.toString());
+                System.err.println("Error subscribing to TOPIC_BUILDING_ELEVATORS: " + e.toString() + "hier3");
               }
             });
       }
@@ -170,7 +197,7 @@ public class ElevatorAlgorithm {
           mNrOfFloors = Integer.parseInt(message);
           latchFloorNr.countDown();
         } catch (Exception e) {
-          System.err.println("Error subscribing to TOPIC_BUILDING_NR_FLOORS: " + e.toString());
+          System.err.println("Error subscribing to TOPIC_BUILDING_NR_FLOORS: " + e.toString() + "hier4");
         }
       });
 
@@ -178,7 +205,7 @@ public class ElevatorAlgorithm {
       this.mBuilding = new Building(mNrOfElevators, mNrOfFloors, mElevatorCapacitys);
 
     } catch (Exception e) {
-      System.out.println("Error in subcribeToInitials: " + e.toString());
+      System.out.println("Error in subscribeToInitials: " + e.toString() + "hier5");
     }
   }
 
@@ -192,7 +219,7 @@ public class ElevatorAlgorithm {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                System.err.println(e.toString());
+                System.err.println(e.toString() + "hier6");
               }
             });
       }
@@ -204,7 +231,7 @@ public class ElevatorAlgorithm {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                System.err.println(e.toString());
+                System.err.println(e.toString() + "hier7");
               }
             });
       }
@@ -217,7 +244,7 @@ public class ElevatorAlgorithm {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  System.err.println(e.toString());
+                  System.err.println(e.toString() + "hier8");
                 }
               });
         }
@@ -231,7 +258,7 @@ public class ElevatorAlgorithm {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  System.err.println(e.toString());
+                  System.err.println(e.toString() + "hier9");
                 }
               });
         }
@@ -247,19 +274,19 @@ public class ElevatorAlgorithm {
       subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR, this::updateTopic);
 
       // subscribe to Current Floor
-      subscribeAndSetCallback(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR, this::updateTopic);
+      subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR, this::updateTopic);
 
       // subscribe to Elevator Acceleration
-      subscribeAndSetCallback(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION, this::updateTopic);
+      subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION, this::updateTopic);
 
       // subscribe to Elevator Speed
-      subscribeAndSetCallback(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED, this::updateTopic);
+      subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED, this::updateTopic);
 
       // subscribe to Elevator Passenger Weight
-      subscribeAndSetCallback(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, this::updateTopic);
+      subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, this::updateTopic);
 
     } catch (Exception e) {
-      System.out.println(e.toString());
+      System.out.println(e.toString() + "hier10");
     }
   }
 
@@ -276,7 +303,7 @@ public class ElevatorAlgorithm {
         // call callback
         callback.accept(topic, message);
       } catch (Exception e) {
-        System.err.println(e.toString());
+        System.err.println(e.toString() + "hier11");
       }
     });
   }
@@ -284,8 +311,9 @@ public class ElevatorAlgorithm {
   private void updateTopic(String topic, String message) {
     synchronized (this) {
       if (topic.contains(TOPIC_BUILDING_FLOORS)) {
-        String[] topicWithoutBaseTopic = topic.split(TOPIC_BUILDING_FLOORS + TOPIC_SEP);
-        String[] splittedTopic = topicWithoutBaseTopic[0].split(TOPIC_SEP);
+        String baseTopic = TOPIC_BUILDING_FLOORS + TOPIC_SEP;
+        String topicWithoutBaseTopic = topic.substring(baseTopic.length(), topic.length());
+        String[] splittedTopic = topicWithoutBaseTopic.split(TOPIC_SEP);
 
         // get floor number and sub topic
         int floorNr = Integer.parseInt(splittedTopic[0]);
@@ -305,9 +333,9 @@ public class ElevatorAlgorithm {
             break;
         }
       } else {
-
-        String[] topicWithoutBaseTopic = topic.split(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP);
-        String[] splittedTopic = topicWithoutBaseTopic[1].split(TOPIC_SEP);
+        String baseTopic = TOPIC_BUILDING_ELEVATORS + TOPIC_SEP;
+        String topicWithoutBaseTopic = topic.substring(baseTopic.length(), topic.length());
+        String[] splittedTopic = topicWithoutBaseTopic.split(TOPIC_SEP);
 
         Integer elevNr = Integer.parseInt(splittedTopic[0]);
         String subTopic = splittedTopic[1];
@@ -356,8 +384,6 @@ public class ElevatorAlgorithm {
 
     // move all elevators to the top and back down to ground floor
     for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
-      System.out.println("Setting target floor for elevator " + elevNr + " to "
-          + (currentStatus.getElevator(elevNr).getCurrentFloor() + 1) % mNrOfFloors);
       publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET,
           (currentStatus.getElevator(elevNr).getCurrentFloor() + 1) % mNrOfFloors);
     }
@@ -387,7 +413,7 @@ public class ElevatorAlgorithm {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(retain)
         .send()
-        .thenAccept(pubAck -> System.out.println("Published message: " + data.toString() + " to topic: " + topic))
+        .thenAccept(pubAck -> { /* System.out.println("Published message: " + data.toString() + " to topic: " + topic)) */ })
         .exceptionally(throwable -> {
           System.err.println("Failed to publish: " + throwable.getMessage());
           return null;
@@ -437,7 +463,7 @@ public class ElevatorAlgorithm {
             System.err.println("Failed to subscribe: " + throwable.getMessage());
           } else {
             // Handle successful subscription
-            System.out.println("Subscribed successfully to topic: " + topic);
+            //System.out.println("Subscribed successfully to topic: " + topic);
           }
         });
   }
@@ -449,7 +475,7 @@ public class ElevatorAlgorithm {
     try {
       this.mqttClient.disconnect();
     } catch (Exception e) {
-      System.out.println(e.toString());
+      System.out.println(e.toString() + "hier12");
     }
   }
 }

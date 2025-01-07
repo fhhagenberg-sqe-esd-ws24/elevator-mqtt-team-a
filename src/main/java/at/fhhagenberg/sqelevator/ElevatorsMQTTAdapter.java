@@ -57,6 +57,8 @@ public class ElevatorsMQTTAdapter {
   public static final String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
   public static final String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
 
+  public final static String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP + "PublishCurrentState";
+
   private IElevator controller;
   private Building building;
   private Mqtt5AsyncClient mqttClient;
@@ -105,6 +107,14 @@ public class ElevatorsMQTTAdapter {
       int floorNumber = controller.getFloorNum();
       this.building = new Building(elevatorCnt, floorNumber, elevatorCapacitys);
       this.publishRetainedMQTT(TOPIC_BUILDING_NR_FLOORS, floorNumber);
+
+      // subscribe to the current state publish request
+      this.subscribeMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, (topic, message) -> {
+        if (message.equals("request")) {
+          publishCurrentState();
+          this.publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE, "done");
+        }
+      });
 
       // subscribe SetTarget
       this.building.getElevators().forEach((elevator) -> {
@@ -182,6 +192,40 @@ public class ElevatorsMQTTAdapter {
     }
   }
 
+  private void publishCurrentState() {
+    for (int elevNr = 0; elevNr < this.building.getNrElevators(); elevNr++) {
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION, 
+        this.building.getElevator(elevNr).getDirection());
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS, 
+        this.building.getElevator(elevNr).getDoorStatus());
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR, 
+        this.building.getElevator(elevNr).getTargetFloor());
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR, 
+        this.building.getElevator(elevNr).getCurrentFloor());
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION, 
+        this.building.getElevator(elevNr).getAcceleration());
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED, 
+        this.building.getElevator(elevNr).getSpeed());
+
+      for (int floorNr = 0; floorNr < this.building.getNrFloors(); floorNr++) {
+        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + 
+          TOPIC_SEP + floorNr, this.building.getElevator(elevNr).getFloorRequested(floorNr));
+        publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + 
+          TOPIC_SEP + floorNr, this.building.getElevator(elevNr).getFloorToService(floorNr));
+      }
+
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT, 
+        this.building.getElevator(elevNr).getCurrentHeight());
+      publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, 
+        this.building.getElevator(elevNr).getCurrentPassengersWeight());
+    }
+
+    for (int floorNr = 0; floorNr < this.building.getNrFloors(); floorNr++) {
+      publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED, this.building.getUpButtonState(floorNr));
+      publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED, this.building.getDownButtonState(floorNr));
+    }
+  }
+
   /**
    * Polls the Floors to service from the PLC and updates the Building
    * 
@@ -196,7 +240,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateUpButtonState(floornr, floorUpButton);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED,
-            floorUpButton);
+          floorUpButton);
       }
 
       boolean floorDownButton = this.controller.getFloorButtonDown(floornr);
@@ -204,7 +248,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateDownButtonState(floornr, floorUpButton);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floornr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED,
-            floorDownButton);
+          floorDownButton);
       }
     }
   }
@@ -218,10 +262,7 @@ public class ElevatorsMQTTAdapter {
 
     // update everything that is specific to an elevator
     for (int elevnr = 0; elevnr < this.building.getNrElevators(); elevnr++) {
-
-      System.out.println("Polling Elevator Nr. " + elevnr);
       pollAndUpdateElevator(elevnr);
-
     }
 
     // update everything that is specific to a floor
@@ -245,12 +286,15 @@ public class ElevatorsMQTTAdapter {
    */
   private <T> void pollAndExecute(T param1, T param2, BiConsumer<Integer, T> function, int elevnr,
       String mqttTopicForPublish) throws RemoteException {
-    if (param1 != param2) {
+    if (!param1.equals(param2)) {
+
+      System.out.println("Is: " + param1 + " , Was: " + param2);
+
       function.accept(elevnr, param2);
       // Publish over MQTT
       this.publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP + mqttTopicForPublish, param2);
-    }
 
+    }
   }
 
   /**
@@ -267,7 +311,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateElevatorFloorRequested(elevnr, floornr, remoteFloorRequested);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP
-            + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floornr, remoteFloorRequested);
+          + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floornr, remoteFloorRequested);
       }
     }
   }
@@ -286,7 +330,7 @@ public class ElevatorsMQTTAdapter {
         this.building.updateElevatorFloorRequested(elevnr, floornr, remoteFloorServiced);
         // Publish over MQTT
         publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevnr + TOPIC_SEP
-            + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floornr, remoteFloorServiced);
+          + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floornr, remoteFloorServiced);
       }
     }
   }
