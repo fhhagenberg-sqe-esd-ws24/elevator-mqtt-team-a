@@ -78,7 +78,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
   private ArrayList<Integer> mElevatorCapacitys;
   AtomicBoolean mInitialized = new AtomicBoolean(false);
 
-  private Building mBuilding;
+  protected Building mBuilding;
 
   /**
    * CTOR
@@ -135,7 +135,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
     askForCurrentState();
 
     // wait for all parameters to be set
-    while(!mInitialized.get());
+    while (!mInitialized.get())
+      ;
 
     try {
       while (true) {
@@ -535,7 +536,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
 
     return nearestFloor;
   }
-  
+
   /**
    * DTOR
    */
