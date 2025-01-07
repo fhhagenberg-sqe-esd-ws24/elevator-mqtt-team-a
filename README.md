@@ -7,11 +7,13 @@ Start Simulation, then ElevatorsMQTTAdapter first:
 
 
 ```
-mvn exec:java -DmainClass=at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter
+mvn clean install -DskipTests exec:java -DmainClass=at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter
+mvn clean install -DskipTests exec:java -DmainClass="at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter"
 ```
 
 then run ElevatorAlgorithm:
 
 ```
-mvn exec:java -DmainClass=at.fhhagenberg.sqelevator.ElevatorAlgorithm
+mvn clean install -DskipTests exec:java -DmainClass=at.fhhagenberg.sqelevator.ElevatorAlgorithm
+mvn clean install -DskipTests exec:java -DmainClass="at.fhhagenberg.sqelevator.ElevatorAlgorithm"
 ```
