@@ -31,7 +31,6 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
   
   private IElevator controller;
   private Building building;
-  private Mqtt5AsyncClient mqttClient;
   private int pollingIntervall;
 
   @FunctionalInterface
@@ -138,9 +137,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
       client.run();
 
     } catch (InterruptedException e) {
-      if (client != null) {
-        client.closeConnection();
-      }
+      client.cleanup();
       Thread.currentThread().interrupt();
     } catch (Exception e) {
       e.printStackTrace();

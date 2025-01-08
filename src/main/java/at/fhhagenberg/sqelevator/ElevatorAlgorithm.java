@@ -33,7 +33,6 @@ public class ElevatorAlgorithm extends BaseMQTT {
   /** State variables for elevator status stopped and uncommitted. */
   public static final int ELEVATOR_DIRECTION_UNCOMMITTED = 2;
 
-  private Mqtt5AsyncClient mqttClient;
 
   // default information about the elevator system
   private int mNrOfFloors = 0;
@@ -73,7 +72,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
       client.run();
 
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.error("{}",e.toString());
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -463,16 +463,5 @@ public class ElevatorAlgorithm extends BaseMQTT {
     }
 
     return nearestFloor;
-  }
-
-  /**
-   * kinda DTOR
-   */
-  protected void cleanup() {
-    try {
-      this.mqttClient.disconnect();
-    } catch (Exception e) {
-      logger.error("{}",e.toString());
-    }
   }
 }

@@ -98,7 +98,7 @@ public class BaseMQTT {
         .retain(retain)
         .build();
 
-    mqttClient.publish(publishMessage)
+        mqttClient.publish(publishMessage)
         .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
           logger.error("Failed to publish: {}", throwable.getMessage());
@@ -173,7 +173,7 @@ public class BaseMQTT {
   /**
    * Disconnects the MQTT client during cleanup.
    */
-  protected void finalize() {
+  protected void cleanup() {
     try {
       mqttClient.disconnect();
     } catch (Exception e) {
