@@ -61,62 +61,6 @@ class ElevatorAlgorithmTest {
         new String(publish.getPayloadAsBytes()).equals("needUpdate")));
   }
 
-  /*
-  @Test
-  void testSubscribeToInitials() throws Exception {
-    // Mock the subscribe builder and its chain methods
-    Mqtt5SubscribeAndCallbackBuilder.Start subscribeBuilderMock = mock(Mqtt5SubscribeAndCallbackBuilder.Start.class);
-    when(mqttClientMock.subscribeWith()).thenReturn(subscribeBuilderMock);
-
-    // Mock the completion of the subscription
-    Mqtt5SubscribeAndCallbackBuilder.Start<CompletableFuture<Mqtt5SubAck>> nestedFutureMock = mock(Mqtt5ReactorSubscribe.Nested.class);
-    when(subscribeBuilderMock.topicFilter(anyString())).thenAnswer((Answer<Mqtt5SubscribeAndCallbackBuilder.Start>) invocation -> {
-        String topic = invocation.getArgument(0, String.class);
-        return subscribeBuilderMock;
-    });
-    when(subscribeBuilderMock.addSubscription()).thenReturn(futureMock);
-
-    // Call the method under test
-    elevatorAlgorithm.subscribeToInitials();
-
-    // Verify subscriptions for key topics
-    verify(subscribeBuilderMock).topicFilter(ElevatorAlgorithm.TOPIC_BUILDING_NR_ELEVATORS);
-    verify(subscribeBuilderMock).topicFilter(ElevatorAlgorithm.TOPIC_BUILDING_NR_FLOORS);
-    verify(subscribeBuilderMock).addSubscription();
-
-
-    // Mock subscribe methods
-    //CompletableFuture<Void> futureMock = CompletableFuture.completedFuture(null);
-    //when(mqttClientMock.subscribeWith().send()).thenReturn(futureMock);
-    //
-    //// Call the method under test
-    //elevatorAlgorithm.subscribeToInitials();
-    //
-    //// Verify subscriptions for key topics
-    //verify(mqttClientMock.subscribeWith()).topicFilter(ElevatorAlgorithm.
-    //TOPIC_BUILDING_NR_ELEVATORS);
-    //verify(mqttClientMock.subscribeWith()).topicFilter(ElevatorAlgorithm.
-    //TOPIC_BUILDING_NR_FLOORS);
-  }*/
-  
-
-  /*
-   * NOT WORKING - disconnect is not called ?
-   * 
-   * @Test
-   * void testCleanup() {
-   * // Mock disconnect method
-   * CompletableFuture<Void> futureMock = CompletableFuture.completedFuture(null);
-   * when(mqttClientMock.disconnect()).thenReturn(futureMock);
-   * 
-   * // Call the method under test
-   * elevatorAlgorithm.cleanup();
-   * 
-   * // Verify the disconnect method was called
-   * verify(mqttClientMock).disconnect();
-   * }
-   */
-
   @Test
   void testShouldServiceFloor() {
 
