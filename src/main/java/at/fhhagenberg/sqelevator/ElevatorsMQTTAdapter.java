@@ -2,17 +2,13 @@ package at.fhhagenberg.sqelevator;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
-import java.io.FileInputStream;
 import java.util.function.BiConsumer;
 
 import com.hivemq.client.mqtt.MqttClient;
-import com.hivemq.client.mqtt.MqttClientState;
-import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
 import sqelevator.IElevator;
 
-import java.util.concurrent.CompletableFuture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,46 +24,9 @@ import org.apache.logging.log4j.LogManager;
 public class ElevatorsMQTTAdapter extends BaseMQTT {
 
   private static Logger logger = LogManager.getLogger(ElevatorsMQTTAdapter.class);
-  // all Topics starting with TOPIC_ are finished topics
-  // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
-  // the correct finished topic
-  public static final String TOPIC_SEP = "/";
-
-  public static final String TOPIC_BUILDING = "buildings";
-  public static final String TOPIC_BUILDING_ID = "0";
-
-  public static final String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
-      + "elevators";
-  public static final String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
-      + "floors";
-  public static final String TOPIC_BUILDING_NR_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
-      + "NrElevators";
-  public static final String TOPIC_BUILDING_NR_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
-      + "NrFloors";
-
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION = "SetCommittedDirection";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS = "ElevatorDoorStatus";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR = "ElevatorTargetFloor";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR = "ElevatorCurrentFloor";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION = "ElevatorAcceleration";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED = "ElevatorSpeed";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT = "ElevatorCurrentHeight";
-  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT = "ElevatorCurrentPassengersWeight";
-
-  public static final String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
-  public static final String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
-
-  public static final String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID
-      + TOPIC_SEP + "PublishCurrentState";
-
+  
   private IElevator controller;
   private Building building;
-  private Mqtt5AsyncClient mqttClient;
   private int pollingIntervall;
 
   @FunctionalInterface
@@ -174,9 +133,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
       client.run();
 
     } catch (InterruptedException e) {
-      if (client != null) {
-        client.closeConnection();
-      }
+      client.cleanup();
       Thread.currentThread().interrupt();
     } catch (Exception e) {
       e.printStackTrace();

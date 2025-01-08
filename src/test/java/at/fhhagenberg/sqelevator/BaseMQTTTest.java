@@ -83,10 +83,10 @@ class BaseMQTTTest {
   }
 
   @Test
-  void testFinalize() throws Throwable {
+  void testcleanup() throws Throwable {
     when(mqttClientMock.disconnect()).thenReturn(CompletableFuture.completedFuture(null));
 
-    baseMQTT.finalize();
+    baseMQTT.cleanup();
 
     verify(mqttClientMock).disconnect();
   }

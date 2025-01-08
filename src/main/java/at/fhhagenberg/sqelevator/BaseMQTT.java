@@ -14,6 +14,44 @@ import org.apache.logging.log4j.LogManager;
 public class BaseMQTT {
   private static Logger logger = LogManager.getLogger(BaseMQTT.class);
 
+
+  // all Topics starting with TOPIC_ are finished topics
+  // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
+  // the correct finished topic
+  public static final String TOPIC_SEP = "/";
+         
+  public static final String TOPIC_BUILDING = "buildings";
+  public static final String TOPIC_BUILDING_ID = "0";
+         
+  public static final String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "elevators";
+  public static final String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "floors";
+  public static final String TOPIC_BUILDING_NR_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "NrElevators";
+  public static final String TOPIC_BUILDING_NR_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+      + "NrFloors";
+
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION = "SetCommittedDirection";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS = "ElevatorDoorStatus";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR = "ElevatorTargetFloor";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR = "ElevatorCurrentFloor";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION = "ElevatorAcceleration";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED = "ElevatorSpeed";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT = "ElevatorCurrentHeight";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT = "ElevatorCurrentPassengersWeight";
+
+  public static final String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
+  public static final String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
+
+  public static final String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID
+      + TOPIC_SEP + "PublishCurrentState";
+
   protected final Mqtt5AsyncClient mqttClient;
 
   /**
@@ -60,7 +98,7 @@ public class BaseMQTT {
         .retain(retain)
         .build();
 
-    mqttClient.publish(publishMessage)
+        mqttClient.publish(publishMessage)
         .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
           logger.error("Failed to publish: {}", throwable.getMessage());
@@ -121,21 +159,21 @@ public class BaseMQTT {
     try {
       if (mqttClient.getState() == MqttClientState.CONNECTED) {
         mqttClient.disconnect().thenRun(() -> {
-          System.out.println("Disconnected from MQTT broker.");
+          logger.info("Disconnected from MQTT broker.");
         }).exceptionally(throwable -> {
-          System.err.println("Failed to disconnect: " + throwable.getMessage());
+          logger.error("Failed to disconnect: {}", throwable.getMessage());
           return null;
         });
       }
     } catch (Exception e) {
-      System.err.println("Error while closing MQTT connection: " + e.getMessage());
+      logger.error("Error while closing MQTT connection: {}", e.getMessage());
     }
   }
 
   /**
    * Disconnects the MQTT client during cleanup.
    */
-  protected void finalize() {
+  protected void cleanup() {
     try {
       mqttClient.disconnect();
     } catch (Exception e) {
