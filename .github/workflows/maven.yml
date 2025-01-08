@@ -33,7 +33,7 @@ jobs:
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     #- name: Update dependency graph
     #  uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
-  build_and_release:
+  package:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -44,33 +44,6 @@ jobs:
         distribution: 'temurin'
     - name: Build ElevatorsMQTTAdapter
       run: mvn clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter"
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-    - name: Upload ElevatorsMQTTAdapter JAR
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/mqtt-elevator-team-a-0.0.1-SNAPSHOT-jar-with-dependencies.jar
-        asset_name: ElevatorsMQTTAdapter.jar
-        asset_content_type: application/java-archive
     - name: Build ElevatorsAlgorithm
       run: mvn clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorsAlgorithm"
-    - name: Upload ElevatorsAlgorithm JAR
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/mqtt-elevator-team-a-0.0.1-SNAPSHOT-jar-with-dependencies.jar
-        asset_name: ElevatorsAlgorithm.jar
-        asset_content_type: application/java-archive
+  
