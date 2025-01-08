@@ -28,6 +28,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
   private Building building;
   private int pollingIntervall;
 
+  /** Used for callbacks */
   @FunctionalInterface
   public interface MessageHandler {
     void handleMessage(String topic, String message);
@@ -35,6 +36,10 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
 
   /**
    * CTOR
+   * 
+   * @param controller       PLC Controller
+   * @param usedMqttClient   MQTT Client
+   * @param pollingIntervall Polling Intervall
    */
   public ElevatorsMQTTAdapter(IElevator controller, Mqtt5AsyncClient usedMqttClient, int pollingIntervall) {
     super(usedMqttClient);
@@ -140,7 +145,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
   }
 
   /**
-   * Runner
+   * Runner - just runs the updateState() in an interval specified on construction
    */
   protected void run() throws InterruptedException {
     // Loop Forever
@@ -155,6 +160,11 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
     }
   }
 
+  /**
+   * Publishes the current state of the Building over MQTT
+   * - needed for the ElevatorAlgorithm, so it can receive the current state
+   * after disconnect (and initially)
+   */
   protected void publishCurrentState() {
     for (int elevNr = 0; elevNr < this.building.getNrElevators(); elevNr++) {
       publishMQTT(
@@ -206,7 +216,6 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
   /**
    * Polls the Floors to service from the PLC and updates the Building
    * 
-   * @param elevnr Elevator Number
    * @throws RemoteException
    */
   private void pollAndExecuteForFloorButtons() throws RemoteException {
@@ -232,8 +241,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
 
   /**
    * Updates the State of the Elevators (polls from PLC) and updates data over
-   * MQTT
-   * if there is a difference
+   * MQTT if there is a difference
    */
   public void updateState() {
 
@@ -263,7 +271,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
    * @param <T>      Type of the value
    */
   private <T> void pollAndExecute(T param1, T param2, BiConsumer<Integer, T> function, int elevnr,
-      String mqttTopicForPublish){
+      String mqttTopicForPublish) {
     if (!param1.equals(param2)) {
       function.accept(elevnr, param2);
       // Publish over MQTT
@@ -312,11 +320,12 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
 
   /**
    * Polls an Elevator from the PLC and updates the Building
+   * 
+   * @param elevnr Elevator Number
    */
   private void pollAndUpdateElevator(int elevnr) {
 
     try {
-
       pollAndExecute(this.building.getElevator(elevnr).getDirection(), this.controller.getCommittedDirection(elevnr),
           this.building::updateElevatorDirection, elevnr, SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION);
       pollAndExecute(this.building.getElevator(elevnr).getDoorStatus(), this.controller.getElevatorDoorStatus(elevnr),

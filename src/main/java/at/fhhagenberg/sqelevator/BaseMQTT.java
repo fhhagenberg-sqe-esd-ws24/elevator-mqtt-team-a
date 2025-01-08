@@ -11,18 +11,21 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+/**
+ * BaseMQTT class to handle the MQTT connection and publish/subscribe to topics
+ */
 public class BaseMQTT {
-  private static Logger logger = LogManager.getLogger(BaseMQTT.class);
 
+  private static Logger logger = LogManager.getLogger(BaseMQTT.class);
 
   // all Topics starting with TOPIC_ are finished topics
   // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
   // the correct finished topic
   public static final String TOPIC_SEP = "/";
-         
+
   public static final String TOPIC_BUILDING = "buildings";
   public static final String TOPIC_BUILDING_ID = "0";
-         
+
   public static final String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
       + "elevators";
   public static final String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
@@ -98,7 +101,7 @@ public class BaseMQTT {
         .retain(retain)
         .build();
 
-        mqttClient.publish(publishMessage)
+    mqttClient.publish(publishMessage)
         .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
           logger.error("Failed to publish: {}", throwable.getMessage());
