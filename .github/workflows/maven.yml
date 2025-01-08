@@ -33,3 +33,31 @@ jobs:
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     #- name: Update dependency graph
     #  uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+  package:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    - name: create artifacts folder
+      run: mkdir -p ./build-artifacts
+    - name: Build ElevatorsMQTTAdapter
+      run: mvn clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter"
+    - name: move ElevatorsMQTTAdapter.jar to build-artifacts
+      run: mv ./target/mqtt-elevator-team-a-0.0.1-SNAPSHOT-jar-with-dependencies.jar ./build-artifacts/ElevatorsMQTTAdapter.jar
+    - name: Build ElevatorAlgorithm
+      run: mvn clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorAlgorithm"
+    - name: move ElevatorAlgorithm.jar to build-artifacts
+      run: mv ./target/mqtt-elevator-team-a-0.0.1-SNAPSHOT-jar-with-dependencies.jar ./build-artifacts/ElevatorAlgorithm.jar
+    - name: move run.bat to build-artifacts
+      run: mv ./run.bat ./build-artifacts/run.bat
+    - name: Upload build-artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          ./build-artifacts/*
