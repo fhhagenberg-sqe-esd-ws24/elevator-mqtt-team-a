@@ -27,4 +27,12 @@ or
 mvn clean install -DskipTests exec:java -DmainClass="at.fhhagenberg.sqelevator.ElevatorAlgorithm"
 ```
 
+## Build Jar
 
+To build a jar run
+```
+mvn -B clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter"
+or
+mvn -B clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorAlgorithm"
+```
+This builds a "<name>-with-dependencies.jar" in target/.
