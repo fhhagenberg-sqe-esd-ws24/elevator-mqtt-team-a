@@ -35,6 +35,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
   /** State variables for elevator status stopped and uncommitted. */
   public static final int ELEVATOR_DIRECTION_UNCOMMITTED = 2;
 
+  public static final int AVG_PASSENGER_WEIGHT = 135;
+
   // default information about the elevator system
   private int mNrOfFloors = 0;
   private int mNrOfElevators = 0;
@@ -332,16 +334,15 @@ public class ElevatorAlgorithm extends BaseMQTT {
    * This contains knut's elevator algorithm.
    */
   protected void doAlgorithm() {
-    // do algorithm stuff
-
     Building currentStatus = new Building(this.mBuilding);
     List<Integer> alreadyServedFloor = new ArrayList<>();
 
     // Iterate through all elevators
     for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
-      ElevatorDataModell elevator = mBuilding.getElevator(elevNr);
+      ElevatorDataModell elevator = currentStatus.getElevator(elevNr);
       int currentFloor = elevator.getCurrentFloor();
       int direction = elevator.getDirection();
+      int newTargetFloor = currentFloor;
 
       // check if doors are open (else break)
       if (currentStatus.getElevator(elevNr).getDoorStatus() != ELEVATOR_DOORS_OPEN) {
@@ -349,25 +350,21 @@ public class ElevatorAlgorithm extends BaseMQTT {
       }
 
       if (direction == ELEVATOR_DIRECTION_UNCOMMITTED) {
-        int floor = handleUncommittedDirection(currentStatus, elevNr, currentFloor, alreadyServedFloor);
-        if (floor != -1) {
-          alreadyServedFloor.add(floor);
-        }
+        newTargetFloor = handleUncommittedDirection(currentStatus, elevNr, currentFloor, alreadyServedFloor);
       }
       else {
         // Check requests in the current direction
-        int newTargetFloor = handleCurrentDirection(currentStatus, elevNr, currentFloor, direction, alreadyServedFloor);
+        newTargetFloor = handleCurrentDirection(currentStatus, elevNr, currentFloor, direction, alreadyServedFloor);
 
         // If no requests in the current direction, reverse direction or idle
         if (newTargetFloor == currentFloor) {
           newTargetFloor = handleReverseOrIdle(currentStatus, elevNr, currentFloor, direction, alreadyServedFloor);
-          if (newTargetFloor != currentFloor) {
-            alreadyServedFloor.add(newTargetFloor);
-          }
         }
-        else {
-          alreadyServedFloor.add(newTargetFloor);
-        }
+      }
+
+      // Add the target floor to the served list if valid
+      if (newTargetFloor != -1 && newTargetFloor != currentFloor) {
+        alreadyServedFloor.add(newTargetFloor);
       }
     }
   }
@@ -475,10 +472,15 @@ public class ElevatorAlgorithm extends BaseMQTT {
     boolean floorDownRequested = building.getDownButtonState(floor);
     boolean floorRequestedByPassengers = building.getElevator(elevNr).getFloorRequested(floor);
 
+    int currentWeight = building.getElevator(elevNr).getCurrentPassengersWeight();
+    int maxWeight = building.getElevator(elevNr).getMaxPassengers();
+    boolean isFull = (currentWeight / AVG_PASSENGER_WEIGHT) > maxWeight;
+    boolean floorRequestedAllowed = (!isFull && (floorUpRequested || floorDownRequested));
+
     // Check if the elevator is assigned to service this floor
     boolean elevatorServicesFloor = building.getElevator(elevNr).getFloorToService(floor);
 
-    return elevatorServicesFloor && (floorUpRequested || floorDownRequested || floorRequestedByPassengers);
+    return elevatorServicesFloor && (floorRequestedAllowed || floorRequestedByPassengers);
   }
 
   /**

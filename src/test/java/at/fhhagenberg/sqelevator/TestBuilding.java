@@ -151,4 +151,125 @@ class BuildingTest {
     assertThrows(IllegalArgumentException.class, () -> building.updateElevatorCurrentPassengersWeight(-1, 500));
     assertThrows(IllegalArgumentException.class, () -> building.updateElevatorCurrentPassengersWeight(3, 500));
   }
+
+  @Test
+  void testCopyCTor() {
+    Building buildingCopy = new Building(building);
+    assertEquals(building.getNrElevators(), buildingCopy.getNrElevators());
+    assertEquals(building.getNrFloors(), buildingCopy.getNrFloors());
+    assertEquals(building.getMaxPassengers(), buildingCopy.getMaxPassengers());
+  }
+
+  @Test
+  void testCopyCTorException() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      new Building(null);
+    });
+    assertEquals("Building cannot be null", exception.getMessage());
+  }
+
+  @Test
+  void testUpdateElevatorDirectionInvalidElevator() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorDirection(-1, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorDirection(3, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+  }
+
+  @Test
+  void testUpdateElevatorDoorStatusInvalidElevator() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorDoorStatus(-1, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorDoorStatus(3, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+  }
+
+  @Test
+  void testUpdateElevatorTargetFloorInvalidElevator() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorTargetFloor(-1, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorTargetFloor(3, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+  }
+
+  @Test
+  void testUpdateElevatorCurrentFloorInvalidElevator() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorCurrentFloor(-1, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateElevatorCurrentFloor(3, 1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+  }
+
+  @Test
+  void testUpdateUpButtonStateInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateUpButtonState(-1, true);
+    });
+    assertEquals("Invalid Floor Number Was -1", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateUpButtonState(6, true);
+    });
+    assertEquals("Invalid Floor Number Was 6", exception.getMessage());
+  }
+
+  @Test
+  void testUpdateDownButtonStateInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateDownButtonState(-1, true);
+    });
+    assertEquals("Invalid Floor Number Was -1", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.updateDownButtonState(6, true);
+    });
+    assertEquals("Invalid Floor Number Was 6", exception.getMessage());
+  }
+
+  @Test
+  void testGetUpButtonStateInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.getUpButtonState(-1);
+    });
+    assertEquals("Invalid Floor Number Was -1", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.getUpButtonState(6);
+    });
+    assertEquals("Invalid Floor Number Was 6", exception.getMessage());
+  }
+
+  @Test
+  void testGetDownButtonStateInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.getDownButtonState(-1);
+    });
+    assertEquals("Invalid Floor Number Was -1", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      building.getDownButtonState(6);
+    });
+    assertEquals("Invalid Floor Number Was 6", exception.getMessage());
+  }
+
 }
