@@ -3,17 +3,12 @@ package at.fhhagenberg.sqelevator;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import com.hivemq.client.mqtt.MqttClient;
-import com.hivemq.client.mqtt.MqttClientState;
-import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
-
-import at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter.MessageHandler;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -220,7 +215,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       cleanup();
       Thread.currentThread().interrupt();
     } catch (Exception e) {
-      logger.info("Error in subscribeToInitials: {}", e);
+      logger.error("Error in subscribeToInitials: {}", e.toString());
     }
   }
 
