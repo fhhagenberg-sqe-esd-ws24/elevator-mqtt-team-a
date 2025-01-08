@@ -34,8 +34,6 @@ public class ElevatorAlgorithm extends BaseMQTT {
   /** State variables for elevator status stopped and uncommitted. */
   public static final int ELEVATOR_DIRECTION_UNCOMMITTED = 2;
 
-  public static final int averagePassengerWeight = 130; // Value in lbs
-
   // default information about the elevator system
   private int mNrOfFloors = 0;
   private int mNrOfElevators = 0;
@@ -407,11 +405,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
 
     for (int floor = startFloor; floor != endFloor; floor += step) {
       // skip already served floors
-      if (alreadyServedFloors.contains(floor)) {
-        continue;
-      };
       // check if current floor needs servicing
-      if (shouldServiceFloor(building, elevNr, floor)) {
+      if (shouldServiceFloor(building, elevNr, floor) && !alreadyServedFloors.contains(floor)) {
         publishMQTT(
             TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET,
             floor
@@ -438,11 +433,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
 
     for (int floor = startFloor; floor != endFloor; floor += step) {
       // skip already served floors
-      if (alreadyServedFloors.contains(floor)) {
-        continue;
-      };
       // check if current floor needs servicing
-      if (shouldServiceFloor(building, elevNr, floor)) {
+      if (shouldServiceFloor(building, elevNr, floor) && !alreadyServedFloors.contains(floor)) {
         int newDirection = direction == ELEVATOR_DIRECTION_UP ? ELEVATOR_DIRECTION_DOWN : ELEVATOR_DIRECTION_UP;
         publishMQTT(
             TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION,
@@ -479,13 +471,11 @@ public class ElevatorAlgorithm extends BaseMQTT {
     boolean floorUpRequested = building.getUpButtonState(floor);
     boolean floorDownRequested = building.getDownButtonState(floor);
     boolean floorRequestedByPassengers = building.getElevator(elevNr).getFloorRequested(floor);
-    //int estimatedPassengerCnt = building.getElevator(elevNr).getCurrentPassengersWeight() / averagePassengerWeight;
-    //boolean isFull = estimatedPassengerCnt > mElevatorCapacitys.get(elevNr) ? true : false;
 
     // Check if the elevator is assigned to service this floor
     boolean elevatorServicesFloor = building.getElevator(elevNr).getFloorToService(floor);
 
-    return elevatorServicesFloor && (floorUpRequested || floorDownRequested || floorRequestedByPassengers); // && !isFull;
+    return elevatorServicesFloor && (floorUpRequested || floorDownRequested || floorRequestedByPassengers);
   }
 
   /**
