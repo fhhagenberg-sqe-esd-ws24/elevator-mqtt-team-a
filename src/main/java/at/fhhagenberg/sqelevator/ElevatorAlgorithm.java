@@ -21,10 +21,10 @@ public class ElevatorAlgorithm extends BaseMQTT {
   // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
   // the correct finished topic
   public static final String TOPIC_SEP = "/";
-         
+
   public static final String TOPIC_BUILDING = "buildings";
   public static final String TOPIC_BUILDING_ID = "0";
-         
+
   public static final String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
       + "elevators";
   public static final String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
@@ -153,7 +153,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
     }
   }
 
-  private void askForCurrentState() {
+  protected void askForCurrentState() {
     publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "request", "needUpdate");
   }
 
@@ -189,7 +189,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 mElevatorCapacitys.set(elevNr, Integer.parseInt(message));
                 latchElevCap.countDown();
               } catch (Exception e) {
-                logger.error("Error subscribing to TOPIC_BUILDING_ELEVATORS: {}",e.toString());
+                logger.error("Error subscribing to TOPIC_BUILDING_ELEVATORS: {}", e.toString());
               }
             });
       }
@@ -210,7 +210,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       latchFloorNr.await();
       this.mBuilding = new Building(mNrOfElevators, mNrOfFloors, mElevatorCapacitys);
 
-    }  catch (InterruptedException e) {
+    } catch (InterruptedException e) {
       logger.info("Interrupted!");
       cleanup();
       Thread.currentThread().interrupt();
@@ -229,7 +229,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                logger.error("{}",e.toString());
+                logger.error("{}", e.toString());
               }
             });
       }
@@ -241,7 +241,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                logger.error("{}",e.toString());
+                logger.error("{}", e.toString());
               }
             });
       }
@@ -254,7 +254,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  logger.error("{}",e.toString());
+                  logger.error("{}", e.toString());
                 }
               });
         }
@@ -268,7 +268,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  logger.error("{}",e.toString());
+                  logger.error("{}", e.toString());
                 }
               });
         }
@@ -296,7 +296,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, this::updateTopic);
 
     } catch (Exception e) {
-      logger.error("{}",e.toString());
+      logger.error("{}", e.toString());
     }
   }
 
@@ -313,14 +313,14 @@ public class ElevatorAlgorithm extends BaseMQTT {
         // call callback
         callback.accept(topic, message);
       } catch (Exception e) {
-        logger.error("{}",e.toString());
+        logger.error("{}", e.toString());
       }
     });
   }
 
   private void updateTopic(String topic, String message) {
     synchronized (this) {
-      logger.info("Topic: {}, Message: {}",topic,message);
+      logger.info("Topic: {}, Message: {}", topic, message);
       if (topic.contains(TOPIC_BUILDING_FLOORS)) {
         String baseTopic = TOPIC_BUILDING_FLOORS + TOPIC_SEP;
         String topicWithoutBaseTopic = topic.substring(baseTopic.length(), topic.length());
@@ -382,7 +382,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
             mBuilding.updateElevatorCurrentPassengersWeight(elevNr, Integer.parseInt((message)));
             break;
           default:
-          logger.error("Unsupported topic!");
+            logger.error("Unsupported topic!");
         }
       }
     }
@@ -416,7 +416,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
         int nearestRequest = findNearestRequest(currentStatus, elevNr, currentFloor);
         if (nearestRequest != -1) {
           int dir = nearestRequest > currentFloor ? ELEVATOR_DIRECTION_UP : ELEVATOR_DIRECTION_DOWN;
-          logger.info("Nearest Request: {}",  nearestRequest);
+          logger.info("Nearest Request: {}", nearestRequest);
           publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP
               + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, dir);
           publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET,
@@ -517,7 +517,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
     int nearestFloor = -1;
     int minDistance = Integer.MAX_VALUE;
 
-    for (int floor = 0; floor < mNrOfFloors; floor++) {
+    for (int floor = 0; floor < building.getNrFloors(); floor++) {
       if (shouldServiceFloor(building, elevNr, floor) && floor != currentFloor) {
         int distance = Math.abs(floor - currentFloor);
         if (distance < minDistance) {
@@ -537,7 +537,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
     try {
       this.mqttClient.disconnect();
     } catch (Exception e) {
-      logger.error("{}",e.toString());
+      logger.error("{}", e.toString());
     }
   }
 }
