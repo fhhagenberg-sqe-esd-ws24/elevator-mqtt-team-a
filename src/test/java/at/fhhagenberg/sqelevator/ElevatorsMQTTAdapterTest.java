@@ -41,7 +41,6 @@ import org.apache.logging.log4j.LogManager;
 @ExtendWith(MockitoExtension.class)
 public class ElevatorsMQTTAdapterTest {
 
-
   private static Logger logger = LogManager.getLogger(ElevatorsMQTTAdapterTest.class);
 
   @Mock
@@ -59,7 +58,7 @@ public class ElevatorsMQTTAdapterTest {
   private static final int POLL_INTERVAL = 250;
 
   private void setExpectedDefaults() throws RemoteException {
-    
+
     lenient().when(mockedIElevator.getElevatorNum()).thenReturn(ELEVATOR_CNT);
     lenient().when(mockedIElevator.getFloorNum()).thenReturn(FLOOR_CNT);
     lenient().when(mockedIElevator.getElevatorCapacity(0)).thenReturn(ELEVATOR_CAPACITY);
@@ -399,7 +398,7 @@ public class ElevatorsMQTTAdapterTest {
   }
 
   @Test
-  public void testPublish(){
+  public void testPublish() {
 
     Mqtt5AsyncClient testClient = MqttClient.builder()
         .useMqttVersion5()
@@ -422,29 +421,35 @@ public class ElevatorsMQTTAdapterTest {
     Hashtable<String, String> topicsToSubscribe = new Hashtable<String, String>();
     topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_NR_ELEVATORS, String.valueOf(ELEVATOR_CNT));
     topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_NR_FLOORS, String.valueOf(FLOOR_CNT));
-    topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS+ElevatorsMQTTAdapter.TOPIC_SEP+0+ElevatorsMQTTAdapter.TOPIC_SEP+ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY, String.valueOf(ELEVATOR_CAPACITY));
-    topicsToSubscribe.put(ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS+ElevatorsMQTTAdapter.TOPIC_SEP+1+ElevatorsMQTTAdapter.TOPIC_SEP+ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY, String.valueOf(ELEVATOR_CAPACITY));
-     
+    topicsToSubscribe.put(
+        ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 0
+            + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY,
+        String.valueOf(ELEVATOR_CAPACITY));
+    topicsToSubscribe.put(
+        ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 1
+            + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY,
+        String.valueOf(ELEVATOR_CAPACITY));
+
     // A Hashtable to store the received messages
     // The key is the topic, the value is the received message
     Hashtable<String, String> receivedTopicsMsg = new Hashtable<String, String>();
 
-    topicsToSubscribe.forEach((topic,expectedvalue) -> {
-        testClient.subscribeWith()
-        .topicFilter(topic)
-        .qos(MqttQos.AT_LEAST_ONCE) // QoS level 1
-        .callback(publish -> {
-          String message = new String(publish.getPayloadAsBytes());
-          receivedTopicsMsg.put(publish.getTopic().toString(), message);
-        })
-        .send()
-        .whenComplete((subAck, throwable) -> {
-          if (throwable != null) {
-            // Handle subscription failure
+    topicsToSubscribe.forEach((topic, expectedvalue) -> {
+      testClient.subscribeWith()
+          .topicFilter(topic)
+          .qos(MqttQos.AT_LEAST_ONCE) // QoS level 1
+          .callback(publish -> {
+            String message = new String(publish.getPayloadAsBytes());
+            receivedTopicsMsg.put(publish.getTopic().toString(), message);
+          })
+          .send()
+          .whenComplete((subAck, throwable) -> {
+            if (throwable != null) {
+              // Handle subscription failure
             } else {
-            // Handle successful subscription
+              // Handle successful subscription
             }
-        });
+          });
     });
 
     @SuppressWarnings("unused")
@@ -453,13 +458,15 @@ public class ElevatorsMQTTAdapterTest {
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
 
     topicsToSubscribe.forEach((topic, expectedvalue) -> {
-      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertTrue(receivedTopicsMsg.containsKey(topic), "Topic " + topic + " was not received."));
-      await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertEquals(expectedvalue, receivedTopicsMsg.get(topic), "Topic " + topic + " has the wrong value."));
+      await().atMost(Duration.ofSeconds(1)).untilAsserted(
+          () -> assertTrue(receivedTopicsMsg.containsKey(topic), "Topic " + topic + " was not received."));
+      await().atMost(Duration.ofSeconds(1)).untilAsserted(
+          () -> assertEquals(expectedvalue, receivedTopicsMsg.get(topic), "Topic " + topic + " has the wrong value."));
     });
 
     testClient.disconnect();
   }
-  
+
   @Test
   public void testSubscribe() throws Exception {
 
@@ -472,7 +479,7 @@ public class ElevatorsMQTTAdapterTest {
 
     CompletableFuture<Void> testClientConnectFuture = testClient.connect()
         .thenAccept(connAck -> {
-            })
+        })
         .exceptionally(throwable -> {
           return null;
         });
@@ -484,10 +491,11 @@ public class ElevatorsMQTTAdapterTest {
 
     // wait for all publishes to finish (if 1 second is not enough, get a better PC)
     await().pollDelay(1, TimeUnit.SECONDS).untilAsserted(() -> assertTrue(true));
-    
+
     Mockito.reset(mockedIElevator);
 
-    String topic = ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 0 + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET;
+    String topic = ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 0
+        + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET;
     String data = Integer.toString(1);
     CompletableFuture<Void> testClientPublishFuture = testClient.publishWith()
         .topic(topic)
@@ -495,7 +503,7 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data, topic))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
           logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
@@ -503,7 +511,8 @@ public class ElevatorsMQTTAdapterTest {
 
     testClientPublishFuture.join();
 
-    String topic2 = ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 1 + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET;
+    String topic2 = ElevatorsMQTTAdapter.TOPIC_BUILDING_ELEVATORS + ElevatorsMQTTAdapter.TOPIC_SEP + 1
+        + ElevatorsMQTTAdapter.TOPIC_SEP + ElevatorsMQTTAdapter.SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET;
     String data2 = Integer.toString(2);
     testClientPublishFuture = testClient.publishWith()
         .topic(topic2)
@@ -511,7 +520,7 @@ public class ElevatorsMQTTAdapterTest {
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(true)
         .send()
-        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}",data2, topic2))
+        .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data2, topic2))
         .exceptionally(throwable -> {
           logger.error("Failed to publish: {}", throwable.getMessage());
           return null;
@@ -524,5 +533,24 @@ public class ElevatorsMQTTAdapterTest {
 
     testClient.disconnect();
   }
-  
+
+  @Test
+  void testRun() throws InterruptedException {
+    ElevatorsMQTTAdapter adapter;
+    adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
+    Thread testThread = new Thread(() -> {
+      try {
+        adapter.run();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    });
+
+    testThread.start();
+    Thread.sleep(2000); // Allow it to run for some time
+    testThread.interrupt();
+
+    assertTrue(testThread.isInterrupted(), "Thread should be interrupted");
+  }
+
 }
