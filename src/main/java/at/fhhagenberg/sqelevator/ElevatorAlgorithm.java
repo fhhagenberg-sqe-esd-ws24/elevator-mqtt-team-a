@@ -222,55 +222,20 @@ public class ElevatorAlgorithm extends BaseMQTT {
   private void subscribeToVariables() {
     try {
 
-      // subscribe to Up buttons
       for (int floorNr = 0; floorNr < this.mNrOfFloors; floorNr++) {
-        this.subscribeMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED,
-            (topic, message) -> {
-              try {
-                updateTopic(topic, message);
-              } catch (Exception e) {
-                logger.error("{}",e.toString());
-              }
-            });
-      }
 
-      // subscribe to Down buttons
-      for (int floorNr = 0; floorNr < this.mNrOfFloors; floorNr++) {
-        this.subscribeMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED,
-            (topic, message) -> {
-              try {
-                updateTopic(topic, message);
-              } catch (Exception e) {
-                logger.error("{}",e.toString());
-              }
-            });
-      }
-
-      // subscribe to Floors Requested
-      for (int elevNr = 0; elevNr < this.mNrOfElevators; elevNr++) {
-        for (int floorNr = 0; floorNr < this.mNrOfFloors; floorNr++) {
+        // subscribe to Up buttons
+        this.subscribeMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONUPPRESSED, this::updateTopicWrapped);
+        // subscribe to Down buttons
+        this.subscribeMQTT(TOPIC_BUILDING_FLOORS + TOPIC_SEP + floorNr + TOPIC_SEP + SUBTOPIC_FLOORS_BUTTONDOWNPRESSED, this::updateTopicWrapped);
+        
+        for (int elevNr = 0; elevNr < this.mNrOfElevators; elevNr++) {
+          // subscribe to Floors Serviced
           this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP
-              + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floorNr, (topic, message) -> {
-                try {
-                  updateTopic(topic, message);
-                } catch (Exception e) {
-                  logger.error("{}",e.toString());
-                }
-              });
-        }
-      }
-
-      // subscribe to Floors Serviced
-      for (int elevNr = 0; elevNr < this.mNrOfElevators; elevNr++) {
-        for (int floorNr = 0; floorNr < this.mNrOfFloors; floorNr++) {
+              + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floorNr, this::updateTopicWrapped);
+              // subscribe to Floors Requested
           this.subscribeMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP
-              + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED + TOPIC_SEP + floorNr, (topic, message) -> {
-                try {
-                  updateTopic(topic, message);
-                } catch (Exception e) {
-                  logger.error("{}",e.toString());
-                }
-              });
+              + SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED + TOPIC_SEP + floorNr, this::updateTopicWrapped);
         }
       }
 
@@ -318,6 +283,13 @@ public class ElevatorAlgorithm extends BaseMQTT {
     });
   }
 
+  private void updateTopicWrapped(String topic, String message) {
+    try {
+      updateTopic(topic, message);
+    } catch (Exception e) {
+      logger.error("{}",e.toString());
+    }
+  }
   private void updateTopic(String topic, String message) {
     synchronized (this) {
       logger.info("Topic: {}, Message: {}",topic,message);
