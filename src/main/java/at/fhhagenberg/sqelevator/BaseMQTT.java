@@ -3,6 +3,7 @@ package at.fhhagenberg.sqelevator;
 import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 
 import java.util.function.BiConsumer;
 import java.util.concurrent.CompletableFuture;
@@ -52,12 +53,14 @@ public class BaseMQTT {
       throw new IllegalStateException("Client not connected to Broker!");
     }
 
-    mqttClient.publishWith()
+    Mqtt5Publish publishMessage = Mqtt5Publish.builder()
         .topic(topic)
         .payload(data.toString().getBytes())
         .qos(MqttQos.AT_LEAST_ONCE)
         .retain(retain)
-        .send()
+        .build();
+
+    mqttClient.publish(publishMessage)
         .thenAccept(pubAck -> logger.info("Published message: {} to topic: {}", data, topic))
         .exceptionally(throwable -> {
           logger.error("Failed to publish: {}", throwable.getMessage());
