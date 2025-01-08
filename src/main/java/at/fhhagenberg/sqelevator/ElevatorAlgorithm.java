@@ -2,6 +2,7 @@ package at.fhhagenberg.sqelevator;
 
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -472,10 +473,15 @@ public class ElevatorAlgorithm extends BaseMQTT {
     boolean floorDownRequested = building.getDownButtonState(floor);
     boolean floorRequestedByPassengers = building.getElevator(elevNr).getFloorRequested(floor);
 
+    int currentWeight = building.getElevator(elevNr).getCurrentPassengersWeight();
+    int maxWeight = building.getElevator(elevNr).getMaxPassengers();
+    boolean isFull = (currentWeight / 135) > maxWeight ? true : false;
+    boolean floorRequestedAllowed = (!isFull && (floorUpRequested || floorDownRequested)) ? true : false;
+
     // Check if the elevator is assigned to service this floor
     boolean elevatorServicesFloor = building.getElevator(elevNr).getFloorToService(floor);
 
-    return elevatorServicesFloor && (floorUpRequested || floorDownRequested || floorRequestedByPassengers);
+    return elevatorServicesFloor && (floorRequestedAllowed || floorRequestedByPassengers);
   }
 
   /**
