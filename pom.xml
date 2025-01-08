@@ -55,14 +55,6 @@
             <artifactId>awaitility</artifactId>
             <version>4.0.0</version>
         </dependency>
-        
-        <!-- Uncomment to use Eclipse Paho Mqttv5 Client -->
-        <!-- <dependency>
-            <groupId>org.eclipse.paho</groupId>
-            <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
-        </dependency> -->
-
-        <!-- Uncomment to use HiveMQ MQTT Client -->
         <dependency>
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-mqtt-client</artifactId>
