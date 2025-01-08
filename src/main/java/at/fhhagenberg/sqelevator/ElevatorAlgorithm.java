@@ -153,7 +153,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       cleanup();
       Thread.currentThread().interrupt();
     } catch (Exception e) {
-      logger.error("Error in main loop: {}", e);
+      logger.error("Error in main loop: {}", e.toString());
       cleanup();
     }
   }
@@ -171,7 +171,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
           mNrOfElevators = Integer.parseInt(message);
           latchElevaCnt.countDown();
         } catch (Exception e) {
-          logger.error("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: {}", e);
+          logger.error("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: {}", e.toString());
         }
       });
 
@@ -194,7 +194,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 mElevatorCapacitys.set(elevNr, Integer.parseInt(message));
                 latchElevCap.countDown();
               } catch (Exception e) {
-                logger.error("Error subscribing to TOPIC_BUILDING_ELEVATORS: {}",e);
+                logger.error("Error subscribing to TOPIC_BUILDING_ELEVATORS: {}",e.toString());
               }
             });
       }
@@ -208,13 +208,17 @@ public class ElevatorAlgorithm extends BaseMQTT {
           mNrOfFloors = Integer.parseInt(message);
           latchFloorNr.countDown();
         } catch (Exception e) {
-          logger.error("Error subscribing to TOPIC_BUILDING_NR_FLOORS: {}", e);
+          logger.error("Error subscribing to TOPIC_BUILDING_NR_FLOORS: {}", e.toString());
         }
       });
 
       latchFloorNr.await();
       this.mBuilding = new Building(mNrOfElevators, mNrOfFloors, mElevatorCapacitys);
 
+    }  catch (InterruptedException e) {
+      logger.info("Interrupted!");
+      cleanup();
+      Thread.currentThread().interrupt();
     } catch (Exception e) {
       logger.info("Error in subscribeToInitials: {}", e);
     }
@@ -230,7 +234,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                logger.error("{}",e);
+                logger.error("{}",e.toString());
               }
             });
       }
@@ -242,7 +246,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                logger.error("{}",e);
+                logger.error("{}",e.toString());
               }
             });
       }
@@ -255,7 +259,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  logger.error("{}",e);
+                  logger.error("{}",e.toString());
                 }
               });
         }
@@ -269,7 +273,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  logger.error("{}",e);
+                  logger.error("{}",e.toString());
                 }
               });
         }
@@ -297,7 +301,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, this::updateTopic);
 
     } catch (Exception e) {
-      logger.error("{}",e);
+      logger.error("{}",e.toString());
     }
   }
 
@@ -314,7 +318,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
         // call callback
         callback.accept(topic, message);
       } catch (Exception e) {
-        logger.error("{}",e);
+        logger.error("{}",e.toString());
       }
     });
   }
@@ -538,7 +542,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
     try {
       this.mqttClient.disconnect();
     } catch (Exception e) {
-      logger.error("{}",e);
+      logger.error("{}",e.toString());
     }
   }
 }
