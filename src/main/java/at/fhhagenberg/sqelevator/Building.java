@@ -44,6 +44,20 @@ public class Building {
     }
   }
 
+  public Building(Building other) {
+    if (other == null) {
+      throw new IllegalArgumentException("Building cannot be null");
+    }
+    // copy elevators
+    this.elevators = new ArrayList<>();
+    for (int i = 0; i < other.elevators.size(); i++) {
+      this.elevators.add(new ElevatorDataModell(other.elevators.get(i)));
+    }
+    this.nrFloors = other.nrFloors;
+    this.floorUpButtonsPressed = new ArrayList<Boolean>(other.floorUpButtonsPressed);
+    this.floorDownButtonsPressed = new ArrayList<Boolean>(other.floorDownButtonsPressed);
+  }
+
   /**
    * Gets the Elevators in the Building
    * 
