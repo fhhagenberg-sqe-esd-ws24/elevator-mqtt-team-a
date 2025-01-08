@@ -494,7 +494,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       // skip already served floors
       if (alreadyServedFloors.contains(floor)) {
         continue;
-      };
+      }
       // check if current floor needs servicing
       if (shouldServiceFloor(building, elevNr, floor) && floor != currentFloor) {
         int distance = Math.abs(floor - currentFloor);
