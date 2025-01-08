@@ -42,8 +42,19 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+    - name: create artifacts folder
+      run: mkdir -p ./build-artifacts
     - name: Build ElevatorsMQTTAdapter
       run: mvn clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter"
-    - name: Build ElevatorsAlgorithm
-      run: mvn clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorsAlgorithm"
-  
+    - name: move ElevatorsMQTTAdapter.jar to build-artifacts
+      run: mv ./target/mqtt-elevator-team-a-0.0.1-SNAPSHOT-jar-with-dependencies.jar ./build-artifacts/ElevatorsMQTTAdapter.jar
+    - name: Build ElevatorAlgorithm
+      run: mvn clean package -DmainClass="at.fhhagenberg.sqelevator.ElevatorAlgorithm"
+    - name: move ElevatorAlgorithm.jar to build-artifacts
+      run: mv ./target/mqtt-elevator-team-a-0.0.1-SNAPSHOT-jar-with-dependencies.jar ./build-artifacts/ElevatoElevatorAlgorithmrsAlgorithm.jar
+    - name: Upload build-artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          ./build-artifacts/*
