@@ -33,7 +33,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
   public static final int ELEVATOR_DIRECTION_DOWN = 1;
   /** State variables for elevator status stopped and uncommitted. */
   public static final int ELEVATOR_DIRECTION_UNCOMMITTED = 2;
-
+  /** State variable for elevator status when idle. */
   public static final int AVG_PASSENGER_WEIGHT = 135;
 
   // default information about the elevator system
@@ -51,6 +51,12 @@ public class ElevatorAlgorithm extends BaseMQTT {
     super(mqttClient);
   }
 
+  /**
+   * Main Function
+   * for standalone Operation
+   * 
+   * @param args command line arguments
+   */
   public static void main(String[] args) {
 
     try {
@@ -83,6 +89,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
 
   /**
    * Main loop
+   * sets up subscriptions to topics and starts the main-loop
    */
   private void run() {
     // get initial information for building
@@ -124,6 +131,10 @@ public class ElevatorAlgorithm extends BaseMQTT {
     publishMQTT(TOPIC_BUILDING_PUBLISH_CURRENT_STATE + TOPIC_SEP + "request", "needUpdate");
   }
 
+  /**
+   * Subscribe to all initially needed values, which cannot change during
+   * operation
+   */
   protected void subscribeToInitials() {
     try {
       // Subscribe to elevator count
@@ -186,6 +197,9 @@ public class ElevatorAlgorithm extends BaseMQTT {
     }
   }
 
+  /**
+   * Subscribe to all variables/topics that can change during operation
+   */
   private void subscribeToVariables() {
     try {
 
@@ -350,8 +364,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
 
       if (direction == ELEVATOR_DIRECTION_UNCOMMITTED) {
         newTargetFloor = handleUncommittedDirection(currentStatus, elevNr, currentFloor, alreadyServedFloor);
-      }
-      else {
+      } else {
         // Check requests in the current direction
         newTargetFloor = handleCurrentDirection(currentStatus, elevNr, currentFloor, direction, alreadyServedFloor);
 
@@ -374,7 +387,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
    * @param elevNr
    * @param currentFloor
    */
-  private int handleUncommittedDirection(Building building, int elevNr, int currentFloor, List<Integer> alreadyServedFloors) {
+  private int handleUncommittedDirection(Building building, int elevNr, int currentFloor,
+      List<Integer> alreadyServedFloors) {
     // Check for the nearest request (up or down)
     int nearestRequest = findNearestRequest(building, elevNr, currentFloor, alreadyServedFloors);
     if (nearestRequest != -1) {
@@ -396,7 +410,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
    * @param direction
    * @return
    */
-  private int handleCurrentDirection(Building building, int elevNr, int currentFloor, int direction, List<Integer> alreadyServedFloors) {
+  private int handleCurrentDirection(Building building, int elevNr, int currentFloor, int direction,
+      List<Integer> alreadyServedFloors) {
     int newTargetFloor = currentFloor;
     int startFloor = direction == ELEVATOR_DIRECTION_UP ? currentFloor + 1 : currentFloor - 1;
     int endFloor = direction == ELEVATOR_DIRECTION_UP ? mNrOfFloors : -1;
@@ -408,8 +423,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       if (shouldServiceFloor(building, elevNr, floor) && !alreadyServedFloors.contains(floor)) {
         publishMQTT(
             TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET,
-            floor
-        );
+            floor);
         newTargetFloor = floor;
         break; // Exit loop once a target is found
       }
@@ -424,7 +438,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
    * @param currentFloor
    * @param direction
    */
-  private int handleReverseOrIdle(Building building, int elevNr, int currentFloor, int direction, List<Integer> alreadyServedFloors) {
+  private int handleReverseOrIdle(Building building, int elevNr, int currentFloor, int direction,
+      List<Integer> alreadyServedFloors) {
     int newTargetFloor = currentFloor;
     int startFloor = direction == ELEVATOR_DIRECTION_UP ? currentFloor - 1 : currentFloor + 1;
     int endFloor = direction == ELEVATOR_DIRECTION_UP ? -1 : mNrOfFloors;
@@ -436,23 +451,21 @@ public class ElevatorAlgorithm extends BaseMQTT {
       if (shouldServiceFloor(building, elevNr, floor) && !alreadyServedFloors.contains(floor)) {
         int newDirection = direction == ELEVATOR_DIRECTION_UP ? ELEVATOR_DIRECTION_DOWN : ELEVATOR_DIRECTION_UP;
         publishMQTT(
-            TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION,
-            newDirection
-        );
+            TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP
+                + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION,
+            newDirection);
         publishMQTT(
             TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET,
-            floor
-        );
+            floor);
         newTargetFloor = floor;
         break;
       }
     }
 
     if (newTargetFloor == currentFloor) {
-        publishMQTT(
-            TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION,
-            ELEVATOR_DIRECTION_UNCOMMITTED
-        );
+      publishMQTT(
+          TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION,
+          ELEVATOR_DIRECTION_UNCOMMITTED);
     }
     return newTargetFloor;
   }

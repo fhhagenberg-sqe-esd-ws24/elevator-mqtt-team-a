@@ -43,6 +43,11 @@ public class ElevatorDataModell {
     }
   }
 
+  /**
+   * Copy Constructor - to copy the state of an elevator
+   * 
+   * @param other ElevatorDataModell to Copy
+   */
   public ElevatorDataModell(ElevatorDataModell other) {
     this.elevatorNumber = other.elevatorNumber;
     this.direction = other.direction;
