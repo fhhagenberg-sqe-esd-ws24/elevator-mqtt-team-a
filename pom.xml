@@ -77,24 +77,42 @@
             <artifactId>log4j-core</artifactId>
             <version>2.17.1</version>
         </dependency>
-      
-      <!-- import testcontainers -->
-      <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>hivemq</artifactId>
-        <version>1.20.4</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>junit-jupiter</artifactId>
-        <version>1.20.4</version>
-        <scope>test</scope>
-      </dependency>
-    </dependencies>
-
+        <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>hivemq</artifactId>
+          <version>1.20.4</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>junit-jupiter</artifactId>
+          <version>1.20.4</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
     <build>
-        <plugins>
+    <plugins>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.4.0</version>
+            <configuration>
+                <source>${maven.compiler.source}</source>
+                <failOnError>false</failOnError>
+            </configuration>
+        </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.12.1</version>
+            </plugin>
+            <!-- Add the Javadoc plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
@@ -109,7 +127,6 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.3.0</version>
                 <configuration>
-                    <!-- <mainClass>at.fhhagenberg.sqelevator.ElevatorExample</mainClass> -->
                     <mainClass>${mainClass}</mainClass>
                 </configuration>
             </plugin>
@@ -126,59 +143,84 @@
                     </archive>
                 </configuration>
             </plugin>
-
             <plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.11</version>
-				<executions>
-					<execution>
-						<id>jacoco-prepare-agent</id>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>jacoco-report</id>
-						<phase>test</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-					</execution>
-					<!-- fails the build if instruction or branch coverage is less than 100% -->
-					<!--
-					<execution>
-						<id>jacoco-check</id>
-						<phase>test</phase>
-						<goals>
-							<goal>check</goal>
-						</goals>
-						<configuration>
-							<rules>
-								<rule>
-									<element>CLASS</element>
-									<excludes>
-										<exclude>*Test</exclude>
-									</excludes>
-									<limits>
-										<limit>
-											<counter>INSTRUCTION</counter>
-											<value>COVEREDRATIO</value>
-											<minimum>1.0</minimum>
-										</limit>
-										<limit>
-											<counter>BRANCH</counter>
-											<value>COVEREDRATIO</value>
-											<minimum>1.0</minimum>
-										</limit>
-									</limits>
-								</rule>
-							</rules>
-						</configuration>
-					</execution>	
-					-->
-				</executions>
-			</plugin>
+              <groupId>org.jacoco</groupId>
+              <artifactId>jacoco-maven-plugin</artifactId>
+              <version>0.8.11</version>
+              <executions>
+                <execution>
+                  <id>jacoco-prepare-agent</id>
+                  <goals>
+                    <goal>prepare-agent</goal>
+                  </goals>
+                </execution>
+                <execution>
+                  <id>jacoco-report</id>
+                  <phase>test</phase>
+                  <goals>
+                    <goal>report</goal>
+                  </goals>
+                </execution>
+              <!-- fails the build if instruction or branch coverage is less than 100% -->
+              <!--
+              <execution>
+                <id>jacoco-check</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <rule>
+                      <element>CLASS</element>
+                      <excludes>
+                        <exclude>*Test</exclude>
+                      </excludes>
+                      <limits>
+                        <limit>
+                          <counter>INSTRUCTION</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>1.0</minimum>
+                        </limit>
+                        <limit>
+                          <counter>BRANCH</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>1.0</minimum>
+                        </limit>
+                      </limits>
+                    </rule>
+                  </rules>
+                </configuration>
+              </execution>	
+              -->
+            </executions>
+          </plugin>
         </plugins>
     </build>
+  <reporting>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.4.0</version>
+        </plugin>
+        <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.11</version>
+            <reportSets>
+                <reportSet>
+                    <reports>
+                        <report>report</report>
+                    </reports>
+                </reportSet>
+            </reportSets>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-report-plugin</artifactId>
+            <version>3.2.1</version>
+        </plugin>
+    </plugins>
+    </reporting>
 </project>
