@@ -1,6 +1,8 @@
 package at.fhhagenberg.sqelevator;
 
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -52,12 +54,17 @@ public class ElevatorAlgorithm extends BaseMQTT {
   public static void main(String[] args) {
 
     try {
-      String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
-      String appConfigPath = rootPath + "Elevators.properties";
-
+      InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream("Elevators.properties");
       Properties appProps = new Properties();
-      appProps.load(new FileInputStream(appConfigPath));
-
+      if (input == null) {
+        logger.error("Sorry, unable to find Elevators.properties");
+        return;
+    }
+      try{
+        appProps.load(input);
+      } catch (IOException e) {
+          logger.error(e.toString());
+      }
       // Create an MQTT client
       Mqtt5AsyncClient mqttClient = MqttClient.builder()
           .automaticReconnectWithDefaultConfig()
