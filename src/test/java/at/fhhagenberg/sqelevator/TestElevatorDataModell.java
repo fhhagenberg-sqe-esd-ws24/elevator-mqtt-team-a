@@ -97,4 +97,64 @@ class ElevatorDataModellTest {
   void testGetElevatorNumber() {
     assertEquals(1, elevatorDataModel.getElevatorNumber());
   }
+
+  @Test
+  void testCopyCTor() {
+    ElevatorDataModell elevatorDataModelCopy = new ElevatorDataModell(elevatorDataModel);
+    assertEquals(elevatorDataModel.getElevatorNumber(), elevatorDataModelCopy.getElevatorNumber());
+    assertEquals(elevatorDataModel.getMaxPassengers(), elevatorDataModelCopy.getMaxPassengers());
+    assertEquals(elevatorDataModel.getCurrentPassengersWeight(), elevatorDataModelCopy.getCurrentPassengersWeight());
+  }
+
+  @Test
+  void testGetFloorRequestedInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.getFloorRequested(-1);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.getFloorRequested(11);
+    });
+    assertEquals("Invalid Elevator Number", exception.getMessage());
+  }
+
+  @Test
+  void testSetFloorRequestedInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.setFloorRequested(-1, true);
+    });
+    assertEquals("Invalid Floor Number requested", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.setFloorRequested(11, true);
+    });
+    assertEquals("Invalid Floor Number requested", exception.getMessage());
+  }
+
+  @Test
+  void testGetFloorToServiceInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.getFloorToService(-1);
+    });
+    assertEquals("Invalid Floor Number", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.getFloorToService(11);
+    });
+    assertEquals("Invalid Floor Number", exception.getMessage());
+  }
+
+  @Test
+  void testSetFloorToServiceInvalidFloor() {
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.setFloorToService(-1, true);
+    });
+    assertEquals("Invalid Floor number", exception.getMessage());
+
+    exception = assertThrows(IllegalArgumentException.class, () -> {
+      elevatorDataModel.setFloorToService(11, true);
+    });
+    assertEquals("Invalid Floor number", exception.getMessage());
+  }
 }

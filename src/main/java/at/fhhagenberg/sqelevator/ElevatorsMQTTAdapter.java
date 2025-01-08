@@ -9,7 +9,6 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
 import sqelevator.IElevator;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -24,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 public class ElevatorsMQTTAdapter extends BaseMQTT {
 
   private static Logger logger = LogManager.getLogger(ElevatorsMQTTAdapter.class);
-  
+
   private IElevator controller;
   private Building building;
   private int pollingIntervall;
@@ -136,14 +135,14 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
       client.cleanup();
       Thread.currentThread().interrupt();
     } catch (Exception e) {
-      logger.error("{}",e.toString());
+      logger.error("{}", e.toString());
     }
   }
 
   /**
    * Runner
    */
-  private void run() throws InterruptedException {
+  protected void run() throws InterruptedException {
     // Loop Forever
     while (true) {
       this.updateState();
@@ -156,7 +155,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
     }
   }
 
-  private void publishCurrentState() {
+  protected void publishCurrentState() {
     for (int elevNr = 0; elevNr < this.building.getNrElevators(); elevNr++) {
       publishMQTT(
           TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION,
