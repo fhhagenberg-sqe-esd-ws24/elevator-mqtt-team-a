@@ -36,6 +36,7 @@ import sqelevator.IElevator;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import java.util.concurrent.CountDownLatch;
 
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
@@ -536,21 +537,28 @@ public class ElevatorsMQTTAdapterTest {
 
   @Test
   void testRun() throws InterruptedException {
-    ElevatorsMQTTAdapter adapter;
-    adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
+    ElevatorsMQTTAdapter adapter = new ElevatorsMQTTAdapter(mockedIElevator, asyncMqttClient, POLL_INTERVAL);
+    CountDownLatch latch = new CountDownLatch(1);
+
     Thread testThread = new Thread(() -> {
       try {
         adapter.run();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
+      } finally {
+        latch.countDown(); // Signal the test that the thread has finished or been interrupted
       }
     });
 
     testThread.start();
-    Thread.sleep(2000); // Allow it to run for some time
+
+    // Wait for some time or until the thread signals it's finished/interrupted
+    boolean finished = latch.await(2, TimeUnit.SECONDS); // Timeout after 2 seconds
+
     testThread.interrupt();
 
     assertTrue(testThread.isInterrupted(), "Thread should be interrupted");
+    assertTrue(finished, "Thread should have finished or been interrupted within the timeout");
   }
 
 }
