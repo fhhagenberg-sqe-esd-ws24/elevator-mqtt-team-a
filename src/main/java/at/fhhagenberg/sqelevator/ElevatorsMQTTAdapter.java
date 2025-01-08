@@ -263,7 +263,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
    * @param <T>      Type of the value
    */
   private <T> void pollAndExecute(T param1, T param2, BiConsumer<Integer, T> function, int elevnr,
-      String mqttTopicForPublish) throws RemoteException {
+      String mqttTopicForPublish){
     if (!param1.equals(param2)) {
       function.accept(elevnr, param2);
       // Publish over MQTT
