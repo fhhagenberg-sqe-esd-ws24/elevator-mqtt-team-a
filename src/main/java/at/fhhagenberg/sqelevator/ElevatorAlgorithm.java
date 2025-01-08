@@ -465,15 +465,4 @@ public class ElevatorAlgorithm extends BaseMQTT {
 
     return nearestFloor;
   }
-
-  /**
-   * kinda DTOR
-   */
-  protected void cleanup() {
-    try {
-      this.mqttClient.disconnect();
-    } catch (Exception e) {
-      logger.error("{}", e.toString());
-    }
-  }
 }
