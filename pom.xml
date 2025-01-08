@@ -69,6 +69,11 @@
             <version>2.17.1</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.17.1</version>
+        </dependency>
+        <dependency>
           <groupId>org.testcontainers</groupId>
           <artifactId>hivemq</artifactId>
           <version>1.20.4</version>
@@ -97,12 +102,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.12.1</version>
-            </plugin>
-            <!-- Add the Javadoc plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.4.0</version>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
