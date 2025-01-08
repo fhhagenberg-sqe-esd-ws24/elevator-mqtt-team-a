@@ -1,8 +1,12 @@
 package at.fhhagenberg.sqelevator;
 
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient.Mqtt5SubscribeAndCallbackBuilder;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishResult;
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscribe;
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5SubscriptionBuilder;
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import org.apache.logging.log4j.Logger;
@@ -10,9 +14,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,22 +62,43 @@ class ElevatorAlgorithmTest {
   }
 
   /*
-   * @Test
-   * void testSubscribeToInitials() throws Exception {
-   * // Mock subscribe methods
-   * CompletableFuture<Void> futureMock = CompletableFuture.completedFuture(null);
-   * when(mqttClientMock.subscribeWith().send()).thenReturn(futureMock);
-   * 
-   * // Call the method under test
-   * elevatorAlgorithm.subscribeToInitials();
-   * 
-   * // Verify subscriptions for key topics
-   * verify(mqttClientMock.subscribeWith()).topicFilter(ElevatorAlgorithm.
-   * TOPIC_BUILDING_NR_ELEVATORS);
-   * verify(mqttClientMock.subscribeWith()).topicFilter(ElevatorAlgorithm.
-   * TOPIC_BUILDING_NR_FLOORS);
-   * }
-   */
+  @Test
+  void testSubscribeToInitials() throws Exception {
+    // Mock the subscribe builder and its chain methods
+    Mqtt5SubscribeAndCallbackBuilder.Start subscribeBuilderMock = mock(Mqtt5SubscribeAndCallbackBuilder.Start.class);
+    when(mqttClientMock.subscribeWith()).thenReturn(subscribeBuilderMock);
+
+    // Mock the completion of the subscription
+    Mqtt5SubscribeAndCallbackBuilder.Start<CompletableFuture<Mqtt5SubAck>> nestedFutureMock = mock(Mqtt5ReactorSubscribe.Nested.class);
+    when(subscribeBuilderMock.topicFilter(anyString())).thenAnswer((Answer<Mqtt5SubscribeAndCallbackBuilder.Start>) invocation -> {
+        String topic = invocation.getArgument(0, String.class);
+        return subscribeBuilderMock;
+    });
+    when(subscribeBuilderMock.addSubscription()).thenReturn(futureMock);
+
+    // Call the method under test
+    elevatorAlgorithm.subscribeToInitials();
+
+    // Verify subscriptions for key topics
+    verify(subscribeBuilderMock).topicFilter(ElevatorAlgorithm.TOPIC_BUILDING_NR_ELEVATORS);
+    verify(subscribeBuilderMock).topicFilter(ElevatorAlgorithm.TOPIC_BUILDING_NR_FLOORS);
+    verify(subscribeBuilderMock).addSubscription();
+
+
+    // Mock subscribe methods
+    //CompletableFuture<Void> futureMock = CompletableFuture.completedFuture(null);
+    //when(mqttClientMock.subscribeWith().send()).thenReturn(futureMock);
+    //
+    //// Call the method under test
+    //elevatorAlgorithm.subscribeToInitials();
+    //
+    //// Verify subscriptions for key topics
+    //verify(mqttClientMock.subscribeWith()).topicFilter(ElevatorAlgorithm.
+    //TOPIC_BUILDING_NR_ELEVATORS);
+    //verify(mqttClientMock.subscribeWith()).topicFilter(ElevatorAlgorithm.
+    //TOPIC_BUILDING_NR_FLOORS);
+  }*/
+  
 
   /*
    * NOT WORKING - disconnect is not called ?
@@ -186,7 +217,8 @@ class ElevatorAlgorithmTest {
     when(elevatorMock.getFloorToService(2)).thenReturn(true);
 
     int startFloor = 0;
-    assertEquals(2, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor));
+    List<Integer> alreadyServedFloors = new ArrayList<>();
+    assertEquals(2, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors));
   }
 
   @Test
@@ -199,7 +231,8 @@ class ElevatorAlgorithmTest {
     when(buildingMock.getElevator(elevNr)).thenReturn(elevatorMock);
 
     int startFloor = 0;
-    assertEquals(-1, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor)); // No requests
+    List<Integer> alreadyServedFloors = new ArrayList<>();
+    assertEquals(-1, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors)); // No requests
   }
 
   @Test
@@ -220,7 +253,8 @@ class ElevatorAlgorithmTest {
     }
 
     int startFloor = 2;
-    assertEquals(1, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor)); // Nearest below
+    List<Integer> alreadyServedFloors = new ArrayList<>();
+    assertEquals(1, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors)); // Nearest below
   }
 
   @Test
@@ -238,7 +272,8 @@ class ElevatorAlgorithmTest {
     when(elevatorMock.getFloorToService(4)).thenReturn(true);
 
     int startFloor = 2;
-    assertEquals(4, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor)); // Edge floor
+    List<Integer> alreadyServedFloors = new ArrayList<>();
+    assertEquals(4, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors)); // Edge floor
   }
 
   @Test
@@ -262,10 +297,11 @@ class ElevatorAlgorithmTest {
     when(elevatorMock.getFloorToService(5)).thenReturn(false);
 
     int startFloor = 0;
-    assertEquals(2, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor));
+    List<Integer> alreadyServedFloors = new ArrayList<>();
+    assertEquals(2, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors));
 
     startFloor = 4;
-    assertEquals(3, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor));
+    assertEquals(3, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors));
   }
 
   @Test
@@ -294,9 +330,10 @@ class ElevatorAlgorithmTest {
     when(elevatorMock.getFloorToService(6)).thenReturn(true);
 
     int startFloor = 4;
-    assertEquals(3, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor)); // down is preferred
+    List<Integer> alreadyServedFloors = new ArrayList<>();
+    assertEquals(3, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors)); // down is preferred
 
     startFloor = 5;
-    assertEquals(4, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor));
+    assertEquals(4, elevatorAlgorithm.findNearestRequest(buildingMock, elevNr, startFloor, alreadyServedFloors));
   }
 }
