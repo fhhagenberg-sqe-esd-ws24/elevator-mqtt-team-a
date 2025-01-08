@@ -136,7 +136,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
       client.cleanup();
       Thread.currentThread().interrupt();
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.error("{}",e.toString());
     }
   }
 
