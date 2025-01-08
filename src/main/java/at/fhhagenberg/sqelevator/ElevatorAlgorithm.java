@@ -15,60 +15,65 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 
 import at.fhhagenberg.sqelevator.ElevatorsMQTTAdapter.MessageHandler;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class ElevatorAlgorithm extends BaseMQTT {
+
+  private static Logger logger = LogManager.getLogger(ElevatorAlgorithm.class);
 
   // all Topics starting with TOPIC_ are finished topics
   // all Topics starting with SUBTOPIC_ are subtopics and need to be appended to
   // the correct finished topic
-  public final static String TOPIC_SEP = "/";
-
-  public final static String TOPIC_BUILDING = "buildings";
-  public final static String TOPIC_BUILDING_ID = "0";
-
-  public final static String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+  public static final String TOPIC_SEP = "/";
+         
+  public static final String TOPIC_BUILDING = "buildings";
+  public static final String TOPIC_BUILDING_ID = "0";
+         
+  public static final String TOPIC_BUILDING_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
       + "elevators";
-  public final static String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+  public static final String TOPIC_BUILDING_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
       + "floors";
-  public final static String TOPIC_BUILDING_NR_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+  public static final String TOPIC_BUILDING_NR_ELEVATORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
       + "NrElevators";
-  public final static String TOPIC_BUILDING_NR_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
+  public static final String TOPIC_BUILDING_NR_FLOORS = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID + TOPIC_SEP
       + "NrFloors";
 
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_CAPACITY = "ElevatorCapacity";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET = "SetTarget";
   public static final String SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION = "SetCommittedDirection";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS = "ElevatorDoorStatus";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR = "ElevatorTargetFloor";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR = "ElevatorCurrentFloor";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION = "ElevatorAcceleration";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED = "ElevatorSpeed";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT = "ElevatorCurrentHeight";
-  public final static String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT = "ElevatorCurrentPassengersWeight";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORREQUESTED = "FloorRequested";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_FLOORSERVICED = "FloorServiced";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDIRECTION = "ElevatorDirection";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORDOORSTATUS = "ElevatorDoorStatus";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORTARGETFLOOR = "ElevatorTargetFloor";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTFLOOR = "ElevatorCurrentFloor";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORACCELERATION = "ElevatorAcceleration";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORSPEED = "ElevatorSpeed";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTHEIGHT = "ElevatorCurrentHeight";
+  public static final String SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT = "ElevatorCurrentPassengersWeight";
 
-  public final static String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
-  public final static String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
+  public static final String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
+  public static final String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
 
-  public final static String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID
+  public static final String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID
       + TOPIC_SEP + "PublishCurrentState";
 
   /** State variable for elevator doors open. */
-  public final static int ELEVATOR_DOORS_OPEN = 1;
+  public static final int ELEVATOR_DOORS_OPEN = 1;
   /** State variable for elevator doors closed. */
-  public final static int ELEVATOR_DOORS_CLOSED = 2;
+  public static final int ELEVATOR_DOORS_CLOSED = 2;
   /** State variable for elevator doors opening. */
-  public final static int ELEVATOR_DOORS_OPENING = 3;
+  public static final int ELEVATOR_DOORS_OPENING = 3;
   /** State variable for elevator doors closing. */
-  public final static int ELEVATOR_DOORS_CLOSING = 4;
+  public static final int ELEVATOR_DOORS_CLOSING = 4;
 
   /** State variable for elevator status when going up */
-  public final static int ELEVATOR_DIRECTION_UP = 0;
+  public static final int ELEVATOR_DIRECTION_UP = 0;
   /** State variable for elevator status when going down. */
-  public final static int ELEVATOR_DIRECTION_DOWN = 1;
+  public static final int ELEVATOR_DIRECTION_DOWN = 1;
   /** State variables for elevator status stopped and uncommitted. */
-  public final static int ELEVATOR_DIRECTION_UNCOMMITTED = 2;
+  public static final int ELEVATOR_DIRECTION_UNCOMMITTED = 2;
 
   private Mqtt5AsyncClient mqttClient;
 
@@ -143,8 +148,13 @@ public class ElevatorAlgorithm extends BaseMQTT {
         doAlgorithm();
         Thread.sleep(1000);
       }
+    } catch (InterruptedException e) {
+      logger.info("Interrupted!");
+      cleanup();
+      Thread.currentThread().interrupt();
     } catch (Exception e) {
-      System.err.println("Error in main loop: " + e.toString());
+      logger.error("Error in main loop: {}", e);
+      cleanup();
     }
   }
 
@@ -161,7 +171,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
           mNrOfElevators = Integer.parseInt(message);
           latchElevaCnt.countDown();
         } catch (Exception e) {
-          System.err.println("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: " + e.toString());
+          logger.error("Error subscribing to TOPIC_BUILDING_NR_ELEVATORS: {}", e);
         }
       });
 
@@ -184,7 +194,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 mElevatorCapacitys.set(elevNr, Integer.parseInt(message));
                 latchElevCap.countDown();
               } catch (Exception e) {
-                System.err.println("Error subscribing to TOPIC_BUILDING_ELEVATORS: " + e.toString());
+                logger.error("Error subscribing to TOPIC_BUILDING_ELEVATORS: {}",e);
               }
             });
       }
@@ -198,7 +208,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
           mNrOfFloors = Integer.parseInt(message);
           latchFloorNr.countDown();
         } catch (Exception e) {
-          System.err.println("Error subscribing to TOPIC_BUILDING_NR_FLOORS: " + e.toString());
+          logger.error("Error subscribing to TOPIC_BUILDING_NR_FLOORS: {}", e);
         }
       });
 
@@ -206,7 +216,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       this.mBuilding = new Building(mNrOfElevators, mNrOfFloors, mElevatorCapacitys);
 
     } catch (Exception e) {
-      System.out.println("Error in subscribeToInitials: " + e.toString());
+      logger.info("Error in subscribeToInitials: {}", e);
     }
   }
 
@@ -220,7 +230,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                System.err.println(e.toString());
+                logger.error("{}",e);
               }
             });
       }
@@ -232,7 +242,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
               try {
                 updateTopic(topic, message);
               } catch (Exception e) {
-                System.err.println(e.toString());
+                logger.error("{}",e);
               }
             });
       }
@@ -245,7 +255,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  System.err.println(e.toString());
+                  logger.error("{}",e);
                 }
               });
         }
@@ -259,7 +269,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
                 try {
                   updateTopic(topic, message);
                 } catch (Exception e) {
-                  System.err.println(e.toString());
+                  logger.error("{}",e);
                 }
               });
         }
@@ -287,7 +297,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
       subscribeAndSetCallbackForAll(SUBTOPIC_ELEVATORS_ELEVATOR_ELEVATORCURRENTPASSENGERWEIGHT, this::updateTopic);
 
     } catch (Exception e) {
-      System.out.println(e.toString());
+      logger.error("{}",e);
     }
   }
 
@@ -304,14 +314,14 @@ public class ElevatorAlgorithm extends BaseMQTT {
         // call callback
         callback.accept(topic, message);
       } catch (Exception e) {
-        System.err.println(e.toString());
+        logger.error("{}",e);
       }
     });
   }
 
   private void updateTopic(String topic, String message) {
     synchronized (this) {
-      System.out.println("Topic: " + topic + ", Message: " + message);
+      logger.info("Topic: {}, Message: {}",topic,message);
       if (topic.contains(TOPIC_BUILDING_FLOORS)) {
         String baseTopic = TOPIC_BUILDING_FLOORS + TOPIC_SEP;
         String topicWithoutBaseTopic = topic.substring(baseTopic.length(), topic.length());
@@ -373,7 +383,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
             mBuilding.updateElevatorCurrentPassengersWeight(elevNr, Integer.parseInt((message)));
             break;
           default:
-            System.err.println("Unsupported topic!");
+          logger.error("Unsupported topic!");
         }
       }
     }
@@ -385,26 +395,10 @@ public class ElevatorAlgorithm extends BaseMQTT {
   protected void doAlgorithm() {
     Building currentStatus = new Building(this.mBuilding);
 
-    // do algorithm stuff
+    // TODO: code without break and continue
+    // https://sonarcloud.io/organizations/fhhagenberg-sqe-esd-ws24/rules?open=java%3AS135&rule_key=java%3AS135
 
-    /*
-     * // move all elevators to the top and back down to ground floor
-     * for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
-     * if (currentStatus.getElevator(elevNr).getTargetFloor() !=
-     * (currentStatus.getElevator(elevNr).getCurrentFloor() + 1))
-     * {
-     * int targetFloor = currentStatus.getElevator(elevNr).getTargetFloor();
-     * int currentFloor = currentStatus.getElevator(elevNr).getCurrentFloor();
-     * if (targetFloor != currentFloor + 1 &&
-     * currentStatus.getElevator(elevNr).getDoorStatus() == ELEVATOR_DOORS_OPEN) {
-     * publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP +
-     * SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, ELEVATOR_DIRECTION_UP);
-     * publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP +
-     * SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET, (currentFloor + 1) % mNrOfFloors);
-     * }
-     * }
-     * }
-     */
+    // do algorithm stuff
 
     // Step 1: Iterate through all elevators
     for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
@@ -423,7 +417,7 @@ public class ElevatorAlgorithm extends BaseMQTT {
         int nearestRequest = findNearestRequest(currentStatus, elevNr, currentFloor);
         if (nearestRequest != -1) {
           int dir = nearestRequest > currentFloor ? ELEVATOR_DIRECTION_UP : ELEVATOR_DIRECTION_DOWN;
-          System.out.println("Nearest Request: " + nearestRequest);
+          logger.info("Nearest Request: {}",  nearestRequest);
           publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP
               + SUBTOPIC_ELEVATORS_ELEVATOR_SETCOMMITTEDDIRECTION, dir);
           publishMQTT(TOPIC_BUILDING_ELEVATORS + TOPIC_SEP + elevNr + TOPIC_SEP + SUBTOPIC_ELEVATORS_ELEVATOR_SETTARGET,
@@ -538,13 +532,13 @@ public class ElevatorAlgorithm extends BaseMQTT {
   }
 
   /**
-   * DTOR
+   * kinda DTOR
    */
-  protected void finalize() {
+  protected void cleanup() {
     try {
       this.mqttClient.disconnect();
     } catch (Exception e) {
-      System.out.println(e.toString());
+      logger.error("{}",e);
     }
   }
 }

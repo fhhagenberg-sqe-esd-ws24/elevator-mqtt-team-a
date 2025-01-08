@@ -62,7 +62,7 @@ public class ElevatorsMQTTAdapter extends BaseMQTT {
   public static final String SUBTOPIC_FLOORS_BUTTONDOWNPRESSED = "ButtonDownPressed";
   public static final String SUBTOPIC_FLOORS_BUTTONUPPRESSED = "ButtonUpPressed";
 
-  public final static String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID
+  public static final String TOPIC_BUILDING_PUBLISH_CURRENT_STATE = TOPIC_BUILDING + TOPIC_SEP + TOPIC_BUILDING_ID
       + TOPIC_SEP + "PublishCurrentState";
 
   private IElevator controller;
