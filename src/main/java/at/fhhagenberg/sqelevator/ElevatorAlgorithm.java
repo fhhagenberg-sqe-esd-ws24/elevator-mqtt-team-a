@@ -2,7 +2,6 @@ package at.fhhagenberg.sqelevator;
 
 import java.io.FileInputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -34,6 +33,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
   public static final int ELEVATOR_DIRECTION_DOWN = 1;
   /** State variables for elevator status stopped and uncommitted. */
   public static final int ELEVATOR_DIRECTION_UNCOMMITTED = 2;
+
+  public static final int AVG_PASSENGER_WEIGHT = 135;
 
   // default information about the elevator system
   private int mNrOfFloors = 0;
@@ -330,16 +331,13 @@ public class ElevatorAlgorithm extends BaseMQTT {
    * This contains knut's elevator algorithm.
    */
   protected void doAlgorithm() {
-    // do algorithm stuff
-
     Building currentStatus = new Building(this.mBuilding);
     List<Integer> alreadyServedFloor = new ArrayList<>();
 
     // Iterate through all elevators
     for (int elevNr = 0; elevNr < mNrOfElevators; elevNr++) {
-      ElevatorDataModell elevator = mBuilding.getElevator(elevNr);
-      int currentFloor = elevator.getCurrentFloor();
-      int direction = elevator.getDirection();
+      int currentFloor = mBuilding.getElevator(elevNr).getCurrentFloor();
+      int direction = mBuilding.getElevator(elevNr).getDirection();
 
       // check if doors are open (else break)
       if (currentStatus.getElevator(elevNr).getDoorStatus() != ELEVATOR_DOORS_OPEN) {
@@ -475,8 +473,8 @@ public class ElevatorAlgorithm extends BaseMQTT {
 
     int currentWeight = building.getElevator(elevNr).getCurrentPassengersWeight();
     int maxWeight = building.getElevator(elevNr).getMaxPassengers();
-    boolean isFull = (currentWeight / 135) > maxWeight ? true : false;
-    boolean floorRequestedAllowed = (!isFull && (floorUpRequested || floorDownRequested)) ? true : false;
+    boolean isFull = (currentWeight / AVG_PASSENGER_WEIGHT) > maxWeight;
+    boolean floorRequestedAllowed = (!isFull && (floorUpRequested || floorDownRequested));
 
     // Check if the elevator is assigned to service this floor
     boolean elevatorServicesFloor = building.getElevator(elevNr).getFloorToService(floor);
