@@ -9,6 +9,10 @@ Navigate to `mqtt` folder and run
 docker run -it -p 1883:1883 -v "$PWD/mosquitto/config:/mosquitto/config" -v /mosquitto/data -v /mosquitto/log --network host eclipse-mosquitto
 ```
 
+## Run from build artifact
+
+Run the "run.bat" file contained in the zip. Algorithm and Adapter should then be started.
+
 ## Run with Simulation
 
 Start Simulation, then `ElevatorsMQTTAdapter` first:
